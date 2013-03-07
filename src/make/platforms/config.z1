@@ -1,0 +1,18 @@
+ifeq ($(USE_TEMPERATURE),y)
+# Z1 has TMP102 temperature sensor
+USE_TMP102 ?= y
+# I2C is mandatory
+USE_I2C = y
+endif
+
+ifeq ($(USE_ACCEL),y)
+# Z1 has ADXL345 accelerometer sensor
+USE_ADXL345 ?= y
+# I2C is mandatory
+USE_I2C = y
+endif
+
+
+# no SD card for Z1
+USE_SDCARD=n
+USE_SDCARD_STREAM=n

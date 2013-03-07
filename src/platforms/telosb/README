@@ -1,0 +1,5 @@
+Support for TelosB and compatible sensor motes using the MSP430F1611 processor.
+The following platforms have been tested in OSW using this platform:
+ * TelosB
+ * Tmote Sky
+ * Tmote Mini 

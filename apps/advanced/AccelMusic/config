@@ -1,0 +1,10 @@
+#
+# Application specific config file
+#
+
+PLATFORM_EXCLUDE=arduino atmega farmmote
+
+USE_ADC=y
+
+# Define LED for MSP430 platform
+#CFLAGS += -DLEDS_RED_PORT=5 -DLEDS_RED_PIN=5

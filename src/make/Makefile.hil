@@ -1,0 +1,183 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# Copyright (c) 2013 OSW. All rights reserved.
+# Copyright (c) 2008-2012 the MansOS team. All rights reserved.
+# Copyright (c) 2013 OSW. All rights reserved.
+# Copyright (c) 2013 OSW. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#  * Redistributions of source code must retain the above copyright notice,
+#    this list of  conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+#============================================================================
+#	Platform-independent Hardware Interface Layer - HIL
+#============================================================================
+
+#===== Component locations =====
+PDFS      = $(SRC)/fs
+PDFATFS   = $(SRC)/fatfs
+
+#===== Sources =====
+
+PSOURCES += $(SRC)/hil/errors.c
+PSOURCES-$(USE_SPI) += $(SRC)/hil/spi.c
+PSOURCES-$(USE_SERIAL) += $(SRC)/hil/serial.c
+PSOURCES-$(USE_ADC) += $(SRC)/hil/adc.c
+PSOURCES-$(USE_LEDS) += $(SRC)/hil/leds.c
+PSOURCES-$(USE_SOFT_I2C) += $(SRC)/hil/i2c_soft.c
+PSOURCES-$(USE_SOFT_SPI) += $(SRC)/hil/spi_soft.c
+PSOURCES-$(USE_DYNAMIC_MEMORY) += $(SRC)/hil/mem.c
+
+PSOURCES += $(SRC)/kernel/kernelmain.c
+PSOURCES-$(USE_ALARMS) += $(SRC)/kernel/alarms.c
+
+PSOURCES-$(USE_PRINT) += $(SRC)/lib/dprint.c
+PSOURCES-$(USE_SERIAL) += $(SRC)/lib/dprint-serial.c
+PSOURCES-$(USE_RADIO) += $(SRC)/lib/dprint-radio.c
+PSOURCES-$(USE_ASSERT) += $(SRC)/lib/assert.c
+PSOURCES-$(USE_RANDOM) += $(SRC)/hil/random.c
+PSOURCES-$(USE_PRINT) += $(SRC)/lib/usart_packet.c
+PSOURCES-$(USE_GPS) += $(SRC)/lib/nmea/nmea.c
+PSOURCES-$(USE_GPS) += $(SRC)/lib/nmea/nmea_stream.c
+PSOURCES-$(USE_HASH) += $(SRC)/lib/hash.c
+PSOURCES-$(USE_ACTIVE_MSG_SERIAL) += $(SRC)/lib/tosmsg.c
+PSOURCES-$(USE_ACTIVE_MSG_RADIO) += $(SRC)/lib/activemsg.c
+PSOURCES-$(USE_CRC) += $(SRC)/lib/codec/crc.c
+# Data processing
+PSOURCES-$(USE_ALGO) += $(SRC)/lib/algo.c
+PSOURCES-$(USE_AVERAGE) += $(SRC)/lib/processing/average.c
+PSOURCES-$(USE_STDEV) += $(SRC)/lib/processing/stdev.c
+PSOURCES-$(USE_FILTER) += $(SRC)/lib/processing/filter.c
+PSOURCES-$(USE_CACHE) += $(SRC)/lib/processing/cache.c
+
+PSOURCES-$(USE_NET) += $(SRC)/net/socket.c
+PSOURCES-$(USE_NET) += $(SRC)/net/networking.c
+PSOURCES-$(USE_NET) += $(SRC)/net/mac.c
+
+PSOURCES-$(USE_THREADS) += $(SRC)/kernel/threads/main.c
+PSOURCES-$(USE_THREADS) += $(SRC)/kernel/threads/mutex.c
+PSOURCES-$(USE_THREADS) += $(SRC)/kernel/threads/threads.c
+PSOURCES-$(USE_THREADS) += $(SRC)/kernel/threads/timing.c
+
+ifeq ($(USE_THREADS),y)
+
+PSOURCES += $(SRC)/kernel/sleep.c
+PSOURCES-$(USE_RADIO) += $(SRC)/kernel/threads/radio.c
+PSOURCES-$(USE_NET_STATS) += $(SRC)/net/net_stats.c
+
+ifeq ($(CONST_MAC_PROTOCOL),MAC_PROTOCOL_NULL)
+PSOURCES-$(USE_NET) += $(SRC)/net/mac/null.c
+else
+ifeq ($(CONST_MAC_PROTOCOL),MAC_PROTOCOL_CSMA)
+PSOURCES-$(USE_NET) += $(SRC)/net/mac/csma.c
+PSOURCES-$(USE_NET) += $(SRC)/net/queue.c
+else
+ifeq ($(CONST_MAC_PROTOCOL),MAC_PROTOCOL_CSMA_ACK)
+PSOURCES-$(USE_NET) += $(SRC)/net/mac/csma-ack.c
+PSOURCES-$(USE_NET) += $(SRC)/net/queue.c
+else
+ifeq ($(CONST_MAC_PROTOCOL),MAC_PROTOCOL_SAD)
+PSOURCES-$(USE_NET) += $(SRC)/net/mac/sad.c
+else
+#$(error "Error: no MAC protocol selected!")
+endif
+endif
+endif
+endif
+
+ifeq ($(USE_ROLE_BASE_STATION),y)
+
+ifeq ($(CONST_ROUTING_PROTOCOL),ROUTING_PROTOCOL_SAD)
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/sad-bs.c
+else
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/dv-bs.c
+endif
+
+else # not base station
+
+ifeq ($(CONST_ROUTING_PROTOCOL),ROUTING_PROTOCOL_SAD)
+
+ifeq ($(USE_ROLE_FORWARDER),y)
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/sad-fwd.c
+else
+ifeq ($(USE_ROLE_COLLECTOR),y)
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/sad-coll.c
+else
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/sad-mote.c
+endif
+endif
+
+else
+PSOURCES-$(USE_NET) += $(SRC)/net/routing/dv.c
+endif
+
+endif
+
+else #! USE_THREADS
+
+PSOURCES-$(USE_HARDWARE_TIMERS) += $(SRC)/kernel/sleep.c
+PSOURCES-$(USE_HARDWARE_TIMERS) += $(SRC)/kernel/nothreads/timing.c
+PSOURCES-$(USE_HARDWARE_TIMERS) += $(SRC)/kernel/nothreads/sleep.c
+
+
+endif # ifeq($(USE_THREADS),y)
+
+PSOURCES-$(USE_NET) += $(SRC)/lib/buffer.c
+PSOURCES-$(USE_HD4478_LCD) += $(SRC)/chips/hd4478/hd4478.c
+PSOURCES-$(USE_MCP9804) += $(SRC)/chips/mcp9804/mcp9804.c
+PSOURCES-$(USE_ADXL345) += $(SRC)/chips/adxl345/adxl345.c
+PSOURCES-$(USE_TMP102) += $(SRC)/chips/tmp102/tmp102.c
+
+PSOURCES-$(USE_REPROGRAMMING) += $(SRC)/kernel/boot.c
+PSOURCES-$(USE_REPROGRAMMING) += $(SRC)/kernel/reprogramming.c
+
+PSOURCES-$(USE_SMP) += $(SRC)/smp/smp.c
+PSOURCES-$(USE_SMP) += $(SRC)/smp/proxy.c
+PSOURCES-$(USE_SMP) += $(SRC)/smp/codec.c
+PSOURCES-$(USE_SMP) += $(SRC)/smp/command.c
+
+# Web management protocol
+PSOURCES-$(USE_WMP) += $(SRC)/wmp/wmp.c
+
+ifneq ($(USE_NET),y)
+PSOURCES += $(SRC)/net/nonet.c
+endif
+
+PSOURCES-$(USE_FLASH_STREAM) += $(SRC)/hil/flash_stream.c
+PSOURCES-$(USE_SDCARD_STREAM) += $(SRC)/hil/sdstream.c
+
+PSOURCES-$(USE_FS) += \
+	$(PDFS)/core.c        \
+	$(PDFS)/prefix.c      \
+	$(PDFS)/dev/dev.c     \
+	$(PDFS)/dev/leds.c    \
+	$(PDFS)/dev/null.c    \
+	$(PDFS)/block/block.c \
+	$(PDFS)/block/meta.c  \
+	$(PDFS)/block/alloc.c
+
+PSOURCES-$(USE_FATFS) += $(PDFATFS)/fatfs.c
+PSOURCES += $(PDFATFS)/posix-stdio.c
+
+PSOURCES-$(USE_SEAL_NET) += $(SRC)/net/seal_networking.c
+
+PSOURCES-$(USE_TIMESYNC) += $(SRC)/net/timesync.c
+
+PSOURCES-$(USE_ENERGY_STATS) += $(SRC)/lib/energy.c
+
+PSOURCES-$(USE_DCO_RECALIBRATION) += $(SRC)/hil/dco.c

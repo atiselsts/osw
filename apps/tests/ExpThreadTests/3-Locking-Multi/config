@@ -1,0 +1,10 @@
+#
+# Application specific config file
+#
+
+# hopeless to fit this on farmmote
+PLATFORM_EXCLUDE=farmmote
+
+USE_THREADS=y
+
+CONST_NUM_USER_THREADS=4

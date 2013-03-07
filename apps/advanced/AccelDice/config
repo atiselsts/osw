@@ -1,0 +1,7 @@
+#
+# Application specific config file
+#
+
+PLATFORM_ONLY=telosb msp430 sadmote epic
+
+USE_ADC=y

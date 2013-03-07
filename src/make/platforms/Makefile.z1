@@ -1,0 +1,75 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# Copyright (c) 2013 OSW. All rights reserved.
+# Copyright (c) 2008-2012 the MansOS team. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#  * Redistributions of source code must retain the above copyright notice,
+#    this list of  conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+#############################################
+# Zolertia Z1 mote
+#############################################
+
+#############################################
+# Define platform variables
+
+ARCH = msp430
+MCU_MODEL = msp430f2617
+
+# Upload target
+UPLOAD_TARGET=upload-z1
+
+# Default clock speed: 8MHz
+ifeq ($(USE_HARDWARE_TIMERS),y)
+CPU_MHZ ?= 8
+else
+CPU_MHZ ?= 1  # TODO?
+endif
+
+# define missing __P1SEL2 and __P5SEL2 symbols
+LDFLAGS += -Wl,--defsym -Wl,__P1SEL2=0x0041 -Wl,--defsym -Wl,__P5SEL2=0x0045
+
+Z1-BSL = python $(SRC)/make/scripts/z1-bsl-nopic
+
+INTERRUPT_VECTOR_COUNT=32
+
+CFLAGS += -DPLATFORM_Z1=1 -mivcnt=$(INTERRUPT_VECTOR_COUNT)
+
+# TODO: this will not work on Mac or Windows!
+MOTELIST = $(SRC)/make/scripts/motelist-z1
+
+#############################################
+# Define platform-specific sources
+# (excluding architecture-specific sources)
+
+PSOURCES += $(SRC)/platforms/z1/platform.c
+
+PSOURCES += $(SRC)/chips/msp430/msp430x2xx_clock.c
+
+PSOURCES-$(USE_RADIO) += $(SRC)/chips/cc2420/cc2420.c
+
+PSOURCES-$(USE_RADIO) += $(SRC)/chips/amb8420/amb8420.c
+
+PSOURCES-$(USE_SERIAL) += $(SRC)/chips/msp430/msp430_usci_uart.c
+PSOURCES-$(USE_SPI) += $(SRC)/chips/msp430/msp430_usci_spi.c
+# because all my efforts to use the unified I2C interface for Z1 were in vain
+PSOURCES-$(USE_I2C) += $(SRC)/platforms/z1/i2c.c
+
+PSOURCES-$(USE_USER_BUTTON) += $(SRC)/arch/msp430/user_button.c

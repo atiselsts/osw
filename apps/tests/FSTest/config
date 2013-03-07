@@ -1,0 +1,12 @@
+#
+# Application specific config file
+#
+
+PLATFORM_EXCLUDE=arduino atmega farmmote z1
+
+USE_THREADS   = n
+USE_EEPROM    = y
+USE_FLASH     = y
+USE_EXT_FLASH = y
+USE_RANDOM    = y
+USE_FS        = y

@@ -1,0 +1,17 @@
+#
+# Application specific config file
+#
+
+USE_THREADS=y
+
+#CONST_MAX_KERNEL_SLEEP_TIME=300
+
+# allow more than on user thread
+CONST_NUM_USER_THREADS=3
+
+# to fit on farmmote
+#CONST_PRINT_BUFFER_SIZE=20
+
+#DEBUG=y
+
+PLATFORM_EXCLUDE=farmmote

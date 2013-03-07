@@ -1,0 +1,11 @@
+#
+# Application specific config file
+#
+
+# only for Arduino?
+PLATFORM_ONLY = arduino
+
+#USE_THREADS=y
+USE_ADC = y
+USE_I2C = y
+CONST_SERIAL_BAUDRATE=9600

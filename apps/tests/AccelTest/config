@@ -1,0 +1,8 @@
+PLATFORM_EXCLUDE=arduino atmega farmmote
+
+USE_ADC=y
+USE_RADIO=y
+USE_BEEPER=y
+
+# Change serial port speed
+CFLAGS = -DSERIAL_BAUDRATE=115200

@@ -1,0 +1,129 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# Copyright (c) 2013 OSW. All rights reserved.
+# Copyright (c) 2008-2012 the MansOS team. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#  * Redistributions of source code must retain the above copyright notice,
+#    this list of  conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+##======= Compilers and options ===========
+
+CC = msp430-gcc
+OBJCOPY = msp430-objcopy
+MSPDEBUG = mspdebug
+
+CFLAGS += -mmcu=$(MCU_MODEL) -DMCU_MSP430=1 -g -Wall
+
+include $(MAKEFILE_GCC)
+
+# dirty hack: this is needed for cygwin
+PROJDIR = .
+
+# msp-bsl does not like /cygdrive...
+OUTDIRDOS = $(subst /cygdrive/c,C:,$(OUTDIR))
+
+ifeq ($(SHORT_UNAME),CYGWIN)
+#cygwin!
+BSL ?= python tos-bsl
+MSP430-BSL ?= python tos-bsl
+else
+BSL ?= python $(SRC)/make/scripts/tos-bsl
+MSP430-BSL ?= python $(SRCROOT)/mos/make/scripts/bsl.py
+endif
+
+# this option is needed for testbed device
+ifeq ($(SLOW_UPLOAD),y)
+SLOW = --slow
+else
+SLOW =
+endif
+
+#===== Additional includes =====
+
+INCLUDES +=
+
+#===== Sources =====
+
+PSOURCES-$(USE_ADDRESSING) += $(SRC)/arch/msp430/net_hal.c
+PSOURCES-$(USE_EEPROM) += $(SRC)/arch/msp430/eeprom_hal.c
+PSOURCES-$(USE_WATCHDOG) += $(SRC)/arch/msp430/watchdog.c
+
+PSOURCES-$(USE_FLASH) += $(SRC)/chips/msp430/msp430_flash.c
+
+PSOURCES-$(USE_HUMIDITY) += $(SRC)/chips/sht11/sht11.c
+PSOURCES-$(USE_HUMIDITY) += $(SRC)/chips/sht11/sht11_conv.c
+
+PSOURCES-$(USE_SOFT_SERIAL) += $(SRC)/arch/msp430/serial_soft.c
+
+#===== Build and Upload Rules =====
+
+EXECUTABLE = image.ihex
+SEAL_EXECUTABLE = image.ihex
+
+$(OUTDIR)/$(EXECUTABLE): $(OUTDIR)/$(APPMOD).elf
+	$(Print) ""
+	$(OBJCOPY) -O ihex $(OUTDIR)/$(APPMOD).elf $(OUTDIR)/$(EXECUTABLE)
+
+platform-upload: build $(UPLOAD_TARGET)
+
+upload-tmote:
+	$(Print) ""
+	-$(MOTELIST)
+
+	$(Print) ""
+	$(BSL) --telosb -c $(BSLPORT) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+
+upload-msp430: 
+	$(MSP430-BSL) --invert-reset --invert-test -c $(BSLPORT) $(SLOW) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+
+upload-msp430-sm3: 
+	$(MSP430-BSL) --invert-reset --invert-test -c $(BSLPORT) $(SLOW) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+#	$(MSP430-BSL) -c $(BSLPORT) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+
+upload-z1:
+	$(Z1-BSL) --z1 -c $(BSLPORT) $(SLOW) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+
+upload-xm1000:
+	$(XM1000-BSL) --telosb -c $(BSLPORT) $(SLOW) -r -e -I -p $(OUTDIR)/$(EXECUTABLE)
+
+upload-launchpad:
+	$(MSPDEBUG) rf2500 "prog $(OUTDIR)/$(EXECUTABLE)"
+
+upload-tilib:
+# note: this is valid for version 3 firmware only
+# TODO: device name!
+	$(MSPDEBUG) tilib -d /dev/ttyACM0 "prog $(OUTDIR)/$(EXECUTABLE)"
+
+memdump: build
+	$(_QUIET) $(MEMDUMP) $(OUTDIR)/$(APPMOD).elf msp430
+
+stackdump:
+	$(_QUIET) $(STACKDUMP) $(OUTDIR)/$(APPMOD).elf msp430 -v
+
+stackdump-build:
+ifeq (1,$(NEW_GCC))
+	$(_QUIET) $(STACKDUMP) $(OUTDIR)/$(APPMOD).elf msp430 $(VERBOSE)
+endif
+
+mspsim: build
+	$(JAVA) -jar $(MSPSIM) -platform=sky $(OUTDIR)/$(APPMOD).elf
+
+size: build
+	$(_QUIET) msp430-size $(OUTDIR)/$(APPMOD).elf

@@ -1,0 +1,96 @@
+#-*-Makefile-*- vim:syntax=make
+#
+# Copyright (c) 2013 OSW. All rights reserved.
+# Copyright (c) 2008-2012 the MansOS team. All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+#  * Redistributions of source code must retain the above copyright notice,
+#    this list of  conditions and the following disclaimer.
+#  * Redistributions in binary form must reproduce the above copyright
+#   notice, this list of conditions and the following disclaimer in the
+#   documentation and/or other materials provided with the distribution.
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS OR
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+# OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR
+# OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+# ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+
+##======= Compilers and options ===========
+
+CC = avr-gcc
+OBJCOPY = avr-objcopy
+CFLAGS += -DMCU_AVR=1 -mmcu=$(MCU_MODEL)
+CFLAGS += -DCPU_MHZ=$(CPU_MHZ)
+CFLAGS += -g -Wall
+
+# Set up the Atmega BSL port
+BSL ?= avrdude
+BSLCONFIG ?=
+
+# for Arduino Duemilanove use this in application's config file:
+#PROGRAMMER ?= stk500v1 
+#PROG_BAUDRATE ?= 57600
+
+# for Arduino Uno use this in application's config file:
+PROG_BAUDRATE=115200
+PROGRAMMER=arduino
+CFLAGS += -DARDUINO_UNO=1
+
+include $(MAKEFILE_GCC)
+
+ifeq ($(USE_FATFS),y)
+# HACK: avoid including stdio.h in this case
+CFLAGS += -D_STDIO_H_
+endif
+
+#===== Additional includes =====
+
+
+#===== Sources =====
+
+PSOURCES-$(USE_ADDRESSING) += $(SRC)/arch/avr/net_hal.c
+PSOURCES-$(USE_WATCHDOG) += $(SRC)/arch/avr/watchdog.c
+
+PSOURCES-$(USE_SERIAL) += $(SRC)/chips/atmega/atmega_usart.c
+PSOURCES-$(USE_I2C) += $(SRC)/chips/atmega/atmega_2wire.c
+
+#===== Build and Upload Rules =====
+
+EXECUTABLE = image.ihex
+SEAL_EXECUTABLE = image.ihex
+
+$(OUTDIR)/$(EXECUTABLE) : $(OUTDIR)/$(APPMOD).elf
+	$(Print) ""
+	$(OBJCOPY) -O ihex $(OUTDIR)/$(APPMOD).elf $(OUTDIR)/$(EXECUTABLE)
+
+# TODO
+UPLOAD_TARGET=upload-atmega
+
+platform-upload : build $(UPLOAD_TARGET)
+
+upload-atmega:
+	$(Print) ""
+	-$(MOTELIST)
+
+	$(Print) ""
+	$(BSL) $(BSLCONFIG) -q -q -p $(MCU_MODEL) -c $(PROGRAMMER) -P $(BSLPORT) -b $(PROG_BAUDRATE) -D -Uflash:w:$(OUTDIR)/$(EXECUTABLE):i
+
+memdump : build
+	$(_QUIET) $(MEMDUMP) $(OUTDIR)/$(APPMOD).elf avr
+
+size: build
+	$(_QUIET) avr-size $(OUTDIR)/$(APPMOD).elf
+
+stackdump:
+	@echo
+
+stackdump-build:
+	@echo
