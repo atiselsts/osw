@@ -73,11 +73,11 @@ enum {
 
 bool blocked = 0;   /* We start free of will */
 bool blocker = 0;   
-OswAddress blockerAddress = 0;
+OswAddress_t blockerAddress = 0;
 
 /* Here we store info about our neighbors */
 struct Neighbors{
-    OswAddress address;
+    OswAddress_t address;
     uint32_t sent;
     uint32_t recv;
     uint8_t lastSeqnum;
@@ -89,13 +89,14 @@ uint16_t neighborCount = 0;
 
 /* Get's neighbors array id form address, 
    appends neighbor to list if he's not there. */
-int getNeighborByAddress(OswAddress address, bool add){
+int getNeighborByAddress(OswAddress_t address, bool add)
+{
     uint16_t counter;
-    for (counter = 0; counter < neighborCount; counter++){
+    for (counter = 0; counter < neighborCount; counter++) {
         if (neighbors[counter].address == address)
             return counter;
     }
-    if (add){
+    if (add) {
         //PRINTF("\n\nADDING NEIGHBOR %#x\n\n",address);
         neighbors[counter].address = address;
         neighbors[counter].sent = 0;
@@ -139,13 +140,13 @@ static void recvTest(Socket_t *socket, uint8_t *data, uint16_t len)
     redLedToggle();
 }
 
-static void sendTestRequest(Socket_t *socket, OswAddress addr)
+static void sendTestRequest(Socket_t *socket, OswAddress_t addr)
 {
     uint8_t i,o;
     uint8_t data[TEST_BYTE_COUNT] = {TEST_BYTE};
     socketSetDstAddress(socket, addr);
     
-    for (i = 0; i < TEST_COUNT; i++){
+    for (i = 0; i < TEST_COUNT; i++) {
         data[1] = i+1;
         if (socketSend(socket, &data, sizeof(data))) {
             PRINTF("socketSend failed\n");
@@ -191,7 +192,8 @@ static void sendUnblock(Socket_t *socket)
     blocker = false;
 }
 
-static void recvAddrRequest(Socket_t *socket, uint8_t *data, uint16_t len){
+static void recvAddrRequest(Socket_t *socket, uint8_t *data, uint16_t len)
+{
     uint16_t temp = *(data + 1) << 8 | *data;
     //PRINTF("got %d bytes from 0x%04x (%#x) - addrRequest\n", len, originAddr, temp);
     socketSetDstAddress(socket, originAddr);

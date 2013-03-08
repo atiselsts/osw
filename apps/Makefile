@@ -32,7 +32,7 @@ TEST_TARGETS = \
 	AssertTest				\
 	BeeperTest				\
 	BlinkTest				\
-	DcoRecalibrationTest	\
+	DcoRecalibrationTest			\
 	ExtFlashTest				\
 	FSTest					\
 	GPSParseTest				\
@@ -55,9 +55,7 @@ TEST_TARGETS = \
 	TMP102Test				\
 	SerialRecvPacketTest			\
 	SerialRecvTest				\
-	SmpTest/DemoBlueLed			\
-	SmpTest/DemoRedLed			\
-	StackTest		            	\
+	StackTest				\
 	UserButtonTest				\
 	ExpThreadTests/0-Lockup			\
 	ExpThreadTests/0-Overflow-User		\

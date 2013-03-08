@@ -6,7 +6,7 @@
 
 #define PACKED __attribute__((packed))
 
-typedef uint16_t OswAddress;
+typedef uint16_t OswAddress_t;
 typedef uint16_t Seqnum_t;
 #endif
 
@@ -31,7 +31,7 @@ typedef struct DataPacket_s DataPacket_t;
 struct SadRoutingInfoPacket_s {
     uint8_t packetType;        // ROUTING_INFORMATION
     uint8_t __reserved;
-    OswAddress rootAddress;  // address of the base station / gateway
+    OswAddress_t rootAddress;  // address of the base station / gateway
     uint16_t hopCount;         // distance from root
     Seqnum_t seqnum;           // sequence number
     uint32_t rootClock;        // used for time sync to calculate the delta
