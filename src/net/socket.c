@@ -110,7 +110,7 @@ void socketInputData(MacInfo_t *macInfo, void *data, uint16_t len)
     unlock();
 }
 
-int8_t sendPacket(OswAddress addr, NetPort_t port,
+int8_t sendPacket(OswAddress_t addr, NetPort_t port,
                   const void *buffer, uint16_t bufferLength)
 {
     static MacInfo_t mi;

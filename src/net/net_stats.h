@@ -77,7 +77,7 @@ enum {
 uint32_t netstats[TOTAL_NETSTAT];
 
 typedef struct LinkQuality_s{
-    OswAddress addr;
+    OswAddress_t addr;
     uint32_t sent;
     uint32_t sentAck;   //ack's sent
     uint32_t recv;
@@ -89,13 +89,13 @@ LinkQuality_t linq[LINQ_MAX_NEIGHBOR_COUNT + 1];
 
 uint8_t linqNeighborCount;
 
-uint16_t getIdFromAddress(OswAddress addr);
+uint16_t getIdFromAddress(OswAddress_t addr);
 
-uint16_t addNeighbor(OswAddress addr);
+uint16_t addNeighbor(OswAddress_t addr);
 
-void incNetstat(uint8_t code, OswAddress addr);
+void incNetstat(uint8_t code, OswAddress_t addr);
 
-void linqPrintResults();
+void linqPrintResults(void);
 
 #else
 #define INC_NETSTAT(code, addr)

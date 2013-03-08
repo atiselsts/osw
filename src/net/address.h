@@ -89,15 +89,21 @@ enum {
 #define OSW_LONG_ADDR_SIZE        8
 #define OSW_SHORT_ADDR_SIZE       2
 
+//! Messages sent to this address are received by all single-hop neighbors
 #define OSW_ADDR_BROADCAST        0xffff
-#define OSW_ADDR_ROOT             0x0000 // as destination, filled in by network stack
-#define OSW_ADDR_BASESTATION      0x0001 // for now, BS always has this address
+/// If this address used as destination in user code,
+/// it is rewritten by the network stack with the actual root node address.
+#define OSW_ADDR_ROOT             0x0000
+//! For now, network's base station always has this address
+#define OSW_ADDR_BASESTATION      0x0001
 
 //----------------------------------------------------------
 // Types
 //----------------------------------------------------------
 
-typedef uint16_t OswAddress;
+//! OSW short (2-byte) address type
+typedef uint16_t OswAddress_t;
+//! OSW long (8-byte) address type
 typedef uint8_t OswLongAddress[OSW_LONG_ADDR_SIZE];
 
 ///
@@ -106,14 +112,14 @@ typedef uint8_t OswLongAddress[OSW_LONG_ADDR_SIZE];
 /// By default, the address size is 2 bytes.
 /// If SUPPORT_LONG_ADDR is defined as true, then 8-byte addresses are supported.
 /// In that case a type field is also included in the address to distinguish
-/// between 2-byte (OswAddress) addresses and 8-byte (OswLongAddress) addresses.
+/// between 2-byte (OswAddress_t) addresses and 8-byte (OswLongAddress) addresses.
 ///
 typedef struct OswAddrVariant_s {
 #if SUPPORT_LONG_ADDR
     uint8_t type;
 #endif
     union {
-        OswAddress saddr;
+        OswAddress_t saddr;
 #if SUPPORT_LONG_ADDR
         OswLongAddress laddr;
 #endif
@@ -128,7 +134,7 @@ typedef struct OswAddrVariant_s {
 //----------------------------------------------------------
 
 ///
-/// This is the local short address
+/// This is the local short (2-byte) address
 ///
 /// The address is automatically generated at the first bootup time and stored
 /// into flash info segment. The address can be manually changed (by rewriting the variable),
@@ -137,7 +143,7 @@ typedef struct OswAddrVariant_s {
 ///
 /// Note: the 64-bit serial number is reused as the local long address!
 ///
-extern OswAddress localAddress;
+extern OswAddress_t localAddress;
 
 //----------------------------------------------------------
 // Functions

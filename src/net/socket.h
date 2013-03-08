@@ -48,7 +48,7 @@ typedef struct Socket_s {
     //! Port, used both as destination and source; can be OSW_PORT_ANY
     NetPort_t port;
     //! Destionation address
-    OswAddress dstAddress;
+    OswAddress_t dstAddress;
     //! Asynchronous receive callback
     SocketRecvFunction recvCb;
     //! Information about the received packet
@@ -80,7 +80,7 @@ static inline void socketBind(Socket_t *s, NetPort_t port)
 }
 
 //! Set destination address of a specific socket
-static inline void socketSetDstAddress(Socket_t *s, OswAddress addr)
+static inline void socketSetDstAddress(Socket_t *s, OswAddress_t addr)
 {
     s->dstAddress = addr;
 }
@@ -89,7 +89,7 @@ static inline void socketSetDstAddress(Socket_t *s, OswAddress addr)
 int8_t socketSend(Socket_t *s, const void *data, uint16_t len);
 
 //! Send data via socket, extended version
-static inline int8_t socketSendEx(Socket_t *s, const void *data, uint16_t len, OswAddress addr)
+static inline int8_t socketSendEx(Socket_t *s, const void *data, uint16_t len, OswAddress_t addr)
 {
     socketSetDstAddress(s, addr);
     return socketSend(s, data, len);
@@ -102,6 +102,6 @@ static inline int8_t socketSendEx(Socket_t *s, const void *data, uint16_t len, O
 /// If 'address' is a broadcast address, the packet is broadcasted to all motes in single-hop neighborhood;
 /// Otherwise the packet is sent to the unicast address specified.
 ///
-int8_t sendPacket(OswAddress address, NetPort_t port, const void *data, uint16_t len);
+int8_t sendPacket(OswAddress_t address, NetPort_t port, const void *data, uint16_t len);
 
 #endif

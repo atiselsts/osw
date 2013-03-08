@@ -37,7 +37,7 @@ RadioPacketBuffer_t *radioPacketBuffer;
 
 #if USE_ADDRESSING
 
-OswAddress localAddress;
+OswAddress_t localAddress;
 
 void networkingInit(void) {
     networkingInitArch();

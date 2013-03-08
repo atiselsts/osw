@@ -42,7 +42,7 @@
 #include <leds.h>
 
 typedef struct MoteInfo_s {
-    OswAddress address;
+    OswAddress_t address;
     uint32_t validUntil;
 } MoteInfo_t;
 
@@ -63,7 +63,7 @@ static void routingReceive(Socket_t *s, uint8_t *data, uint16_t len);
 static Seqnum_t lastSeenSeqnum;
 static uint8_t hopCountToRoot = MAX_HOP_COUNT;
 static uint32_t lastRootMessageTime = (uint32_t) -ROUTING_INFO_VALID_TIME;
-static OswAddress nexthopToRoot;
+static OswAddress_t nexthopToRoot;
 
 static void roStartListeningTimerCb(void *);
 static void roStopListeningTimerCb(void *);
@@ -233,7 +233,7 @@ static void roRequestTimerCb(void *x)
     alarmSchedule(&roStopListeningTimer, ROUTING_REPLY_WAIT_TIMEOUT);
 }
 
-static uint8_t markAsSeen(OswAddress address, bool addNew)
+static uint8_t markAsSeen(OswAddress_t address, bool addNew)
 {
     uint32_t now = (uint32_t) getJiffies();
     // MOTE_INFO_VALID_TIME - ?

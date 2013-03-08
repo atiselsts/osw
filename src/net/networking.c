@@ -37,10 +37,10 @@
 
 // ---------- place for global net variables
 
-OswAddress localAddress;
+OswAddress_t localAddress;
 
 #ifndef USE_ROLE_BASE_STATION
-OswAddress rootAddress;
+OswAddress_t rootAddress;
 int64_t rootClockDeltaMs;
 #endif
 

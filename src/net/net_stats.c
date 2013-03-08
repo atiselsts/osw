@@ -26,7 +26,8 @@
 #include <print.h>
 #include "net_stats.h"
 
-inline uint16_t getIdFromAddress(OswAddress addr){
+inline uint16_t getIdFromAddress(OswAddress_t addr)
+{
     uint8_t i;
     for (i = 0; i < linqNeighborCount; i++){
         if (linq[i].addr == addr){
@@ -36,16 +37,18 @@ inline uint16_t getIdFromAddress(OswAddress addr){
     return addNeighbor(addr);
 }
 
-inline uint16_t addNeighbor(OswAddress addr){
+inline uint16_t addNeighbor(OswAddress_t addr)
+{
     if (linqNeighborCount < LINQ_MAX_NEIGHBOR_COUNT){
         memset(&linq[linqNeighborCount], 0, sizeof (LinkQuality_t));
-        memcpy(&linq[linqNeighborCount].addr, &addr, sizeof(OswAddress));
+        memcpy(&linq[linqNeighborCount].addr, &addr, sizeof(OswAddress_t));
         return linqNeighborCount++;
     }
     return LINQ_MAX_NEIGHBOR_COUNT;
 }
 
-void incNetstat(uint8_t code, OswAddress addr){
+void incNetstat(uint8_t code, OswAddress_t addr)
+{
     if (addr != EMPTY_ADDR){
         switch (code){
             case NETSTAT_PACKETS_RTX:
@@ -67,7 +70,8 @@ void incNetstat(uint8_t code, OswAddress addr){
     netstats[code]++;
 }
 
-void linqPrintResults(){
+void linqPrintResults(void)
+{
     uint8_t i;
     PRINTF("Addr\tSent\tAck sent\tRecv\tAck recv\n");
     for (i = 0; i < linqNeighborCount; i++){

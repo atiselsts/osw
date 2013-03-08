@@ -81,7 +81,7 @@ struct RoutingInfoPacket_s {
     //! The role of the sender 
     uint8_t senderType;
     //! Address of the base station / gateway
-    OswAddress rootAddress;
+    OswAddress_t rootAddress;
     //! Distance from root in hops
     uint16_t hopCount;
     //! Sequence number
@@ -150,7 +150,7 @@ typedef struct RoutingRequestPacket_s {
 #endif
 
 //! The address of the root node
-extern OswAddress rootAddress;
+extern OswAddress_t rootAddress;
 
 //===========================================================
 
