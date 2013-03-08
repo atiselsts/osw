@@ -222,7 +222,7 @@ class ApiCore:
         self.loadUserMotes()
 
     def getPlatformsFromMakefile(self):
-        makefile = os.path.join(self.path, "../../mos/make/Makefile.options")
+        makefile = os.path.join(self.path, "../../src/make/Makefile.options")
         if os.path.exists(makefile) and os.path.isfile(makefile):
             f = open(makefile, "r")
             for line in f.readlines():

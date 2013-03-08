@@ -112,16 +112,16 @@ class Mote(object):
         if not self.port: return 1
 
         if self.platform == "telosb":
-            bsl = "mos/make/scripts/tos-bsl"
+            bsl = "src/make/scripts/tos-bsl"
             platformArgs = ["--telosb"]
         elif self.platform == "xm1000":
-            bsl = "mos/make/scripts/xm1000-bsl"
+            bsl = "src/make/scripts/xm1000-bsl"
             platformArgs = ["--telosb"] # "telosb" is still the right arg
         elif self.platform == "z1":
-            bsl = "mos/make/scripts/z1-bsl-nopic"
+            bsl = "src/make/scripts/z1-bsl-nopic"
             platformArgs = ["--z1"]
         else:
-            bsl = "mos/make/scripts/bsl.py"
+            bsl = "src/make/scripts/bsl.py"
             platformArgs = ["--invert-reset", "--invert-test"]
 
         bsl = os.path.join(settingsInstance.getCfgValue("oswDirectory"), bsl)

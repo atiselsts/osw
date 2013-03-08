@@ -337,16 +337,16 @@
         </option>
         <option>
           <name>newCCIncludePaths</name>
-          <state>$PROJ_DIR$\..\..\..\mos\include</state>
-          <state>$PROJ_DIR$\..\..\..\mos</state>
-          <state>$PROJ_DIR$\..\..\..\mos\kernel</state>
-          <state>$PROJ_DIR$\..\..\..\mos\lib</state>
-          <state>$PROJ_DIR$\..\..\..\mos\lib\processing</state>
-          <state>$PROJ_DIR$\..\..\..\mos\net</state>
-          <state>$PROJ_DIR$\..\..\..\mos\hil</state>
-          <state>$PROJ_DIR$\..\..\..\mos\arch\msp430</state>
-          <state>$PROJ_DIR$\..\..\..\mos\platforms\farmmote</state>
-          <state>$PROJ_DIR$\..\..\..\mos\chips</state>
+          <state>$PROJ_DIR$\..\..\..\src\include</state>
+          <state>$PROJ_DIR$\..\..\..\src</state>
+          <state>$PROJ_DIR$\..\..\..\src\kernel</state>
+          <state>$PROJ_DIR$\..\..\..\src\lib</state>
+          <state>$PROJ_DIR$\..\..\..\src\lib\processing</state>
+          <state>$PROJ_DIR$\..\..\..\src\net</state>
+          <state>$PROJ_DIR$\..\..\..\src\hil</state>
+          <state>$PROJ_DIR$\..\..\..\src\arch\msp430</state>
+          <state>$PROJ_DIR$\..\..\..\src\platforms\farmmote</state>
+          <state>$PROJ_DIR$\..\..\..\src\chips</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1342,11 +1342,11 @@
         </option>
         <option>
           <name>newCCIncludePaths</name>
-          <state>$PROJ_DIR$\..\..\..\mos</state>
-          <state>$PROJ_DIR$\..\..\..\mos\kernel</state>
-          <state>$PROJ_DIR$\..\..\..\mos\platforms\farmmote</state>
-          <state>$PROJ_DIR$\..\..\..\mos\arch\msp430</state>
-          <state>$PROJ_DIR$\..\..\..\mos\chips</state>
+          <state>$PROJ_DIR$\..\..\..\src</state>
+          <state>$PROJ_DIR$\..\..\..\src\kernel</state>
+          <state>$PROJ_DIR$\..\..\..\src\platforms\farmmote</state>
+          <state>$PROJ_DIR$\..\..\..\src\arch\msp430</state>
+          <state>$PROJ_DIR$\..\..\..\src\chips</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -2012,94 +2012,94 @@
     </settings>
   </configuration>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\adc.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\adc.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\alarms.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\alarms.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\assert.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\assert.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\cc1101\cc1101.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\cc1101\cc1101.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\codec\crc.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\codec\crc.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\dprint-radio.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\dprint-radio.c</name>
     <excluded>
       <configuration>Debug</configuration>
     </excluded>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\dprint-serial.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\dprint-serial.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\dprint.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\dprint.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\ds18b20\ds18b20.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\ds18b20\ds18b20.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\ds2411\ds2411.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\ds2411\ds2411.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\errors.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\errors.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\kernelmain.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\kernelmain.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\leds.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\leds.c</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\..\..\apps\demo\Blink\main.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\mem.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\mem.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usci_spi.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usci_spi.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usci_uart.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usci_uart.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430x1xx_clock.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430x1xx_clock.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\platforms\farmmote\platform.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\platforms\farmmote\platform.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\fatfs\posix-stdio.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\fatfs\posix-stdio.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\random.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\random.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\serial.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\serial.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\sht11\sht11.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\sht11\sht11.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\sht11\sht11_conv.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\sht11\sht11_conv.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\net\simple_mhop.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\net\simple_mhop.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\sleep.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\sleep.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\spi.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\spi.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\nothreads\timing.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\nothreads\timing.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\usart_packet.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\usart_packet.c</name>
   </file>
 </project>
 

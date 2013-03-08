@@ -47,7 +47,7 @@ class GenerateMakefile():
 #  The developer must define at least SOURCES and APPMOD in this file
 #
 #  In addition, PROJDIR and OSW must be defined, before including 
-#  the main Makefile at ${OSW}/mos/make/Makefile
+#  the main Makefile at ${OSW}/src/make/Makefile
 # --------------------------------------------------------------------
 
 # Sources are all project source files, excluding MansOS files
@@ -64,5 +64,5 @@ ifndef OSW
 endif
 
 # Include the main makefile
-include ${OSW}/mos/make/Makefile
+include ${OSW}/src/make/Makefile
 """)

@@ -330,11 +330,11 @@
         </option>
         <option>
           <name>newCCIncludePaths</name>
-          <state>$PROJ_DIR$\..\..\..\mos</state>
-          <state>$PROJ_DIR$\..\..\..\mos\kernel</state>
-          <state>$PROJ_DIR$\..\..\..\mos\platforms\telosb</state>
-          <state>$PROJ_DIR$\..\..\..\mos\arch\msp430</state>
-          <state>$PROJ_DIR$\..\..\..\mos\chips</state>
+          <state>$PROJ_DIR$\..\..\..\src</state>
+          <state>$PROJ_DIR$\..\..\..\src\kernel</state>
+          <state>$PROJ_DIR$\..\..\..\src\platforms\telosb</state>
+          <state>$PROJ_DIR$\..\..\..\src\arch\msp430</state>
+          <state>$PROJ_DIR$\..\..\..\src\chips</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1288,11 +1288,11 @@
         </option>
         <option>
           <name>newCCIncludePaths</name>
-          <state>$PROJ_DIR$\..\..\..\mos</state>
-          <state>$PROJ_DIR$\..\..\..\mos\kernel</state>
-          <state>$PROJ_DIR$\..\..\..\mos\platforms\telosb</state>
-          <state>$PROJ_DIR$\..\..\..\mos\arch\msp430</state>
-          <state>$PROJ_DIR$\..\..\..\mos\chips</state>
+          <state>$PROJ_DIR$\..\..\..\src</state>
+          <state>$PROJ_DIR$\..\..\..\src\kernel</state>
+          <state>$PROJ_DIR$\..\..\..\src\platforms\telosb</state>
+          <state>$PROJ_DIR$\..\..\..\src\arch\msp430</state>
+          <state>$PROJ_DIR$\..\..\..\src\chips</state>
         </option>
         <option>
           <name>CCStdIncCheck</name>
@@ -1919,136 +1919,136 @@
     </settings>
   </configuration>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\adc.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\adc.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\adc.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\adc.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\alarms.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\alarms.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\alarms.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\alarms.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\alarms_system.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\alarms_system.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\assert.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\assert.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\assert.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\assert.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\cc2420\cc2420.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\cc2420\cc2420.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\cc2420\cc2420.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\cc2420\cc2420.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\cc2420\cc2420_const.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\cc2420\cc2420_const.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\cc2420\cc2420_spi.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\cc2420\cc2420_spi.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\defines.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\defines.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\defines_iar.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\defines_iar.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\dprint.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\dprint.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\lib\dprint.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\lib\dprint.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\errors.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\errors.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\errors.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\errors.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\platforms\telosb\flash.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\platforms\telosb\flash.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\gpio.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\gpio.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\arch\msp430\gpio_hal.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\arch\msp430\gpio_hal.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\kernelmain.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\kernelmain.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\leds.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\leds.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\leds.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\leds.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\platforms\telosb\ledslist.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\platforms\telosb\ledslist.h</name>
   </file>
   <file>
     <name>$PROJ_DIR$\..\..\..\apps\demo\Blink\main.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_adc.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_adc.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_clock.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_clock.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_int.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_int.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_timers.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_timers.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_timers.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_timers.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usart.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usart.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usart.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usart.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usart_spi.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usart_spi.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430_usart_spi.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430_usart_spi.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\chips\msp430\msp430x1xx_clock.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\chips\msp430\msp430x1xx_clock.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\platforms\telosb\platform.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\platforms\telosb\platform.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\platforms\telosb\platform.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\platforms\telosb\platform.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\sleep.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\sleep.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\spi.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\spi.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\spi.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\spi.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\kernel\nothreads\timing.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\kernel\nothreads\timing.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\arch\msp430\udelay_hal.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\arch\msp430\udelay_hal.h</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\usart.c</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\usart.c</name>
   </file>
   <file>
-    <name>$PROJ_DIR$\..\..\..\mos\hil\usart.h</name>
+    <name>$PROJ_DIR$\..\..\..\src\hil\usart.h</name>
   </file>
 </project>
 

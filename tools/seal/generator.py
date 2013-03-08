@@ -309,7 +309,7 @@ ifndef OSW
   OSW = {1}
 endif
 '''.format(sources, pathToOS))
-        outputFile.write("include ${OSW}/mos/make/Makefile")
+        outputFile.write("include ${OSW}/src/make/Makefile")
 
     def isComponentUsed(self, componentName):
         return components.componentRegister.isComponentUsed(componentName)

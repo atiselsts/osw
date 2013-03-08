@@ -14,7 +14,7 @@ PROJDIR = \$(CURDIR)
 ifndef OSW
   OSW = \$(PROJDIR)/$OSW_PATH
 endif
-include \${OSW}/mos/make/Makefile
+include \${OSW}/src/make/Makefile
 EOF
     make clean && make $ARCH
 done

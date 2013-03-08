@@ -1528,7 +1528,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                     oswPath = os.path.join(oswPath, "..")
                 outFile.write("  OSW = " + oswPath + "\n")
                 outFile.write("endif\n")
-                outFile.write("include ${OSW}/mos/make/Makefile\n")
+                outFile.write("include ${OSW}/src/make/Makefile\n")
                 outFile.close()
 
             closeAllSerial()
