@@ -1,4 +1,4 @@
-INCLUDES = ../../../mos/lib/gps
+INCLUDES = ../../../src/lib/gps
 
 all: gpstest run
 

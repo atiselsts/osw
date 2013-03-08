@@ -27,8 +27,8 @@
 #
 #  The developer must define at least SOURCES and APPMOD in this file
 #
-#  In addition, PROJDIR and MOSROOT must be defined, before including 
-#  the main Makefile at ${MOSROOT}/mos/make/Makefile
+#  In addition, PROJDIR and OSW must be defined, before including 
+#  the main Makefile at ${OSW}/src/make/Makefile
 # --------------------------------------------------------------------
 
 # Sources are all project source files, excluding system files
@@ -40,9 +40,9 @@ APPMOD = Sender
 # --------------------------------------------------------------------
 # Set the key variables
 PROJDIR = $(CURDIR)
-ifndef MOSROOT
-  MOSROOT = $(PROJDIR)/../../..
+ifndef OSW
+  OSW = $(PROJDIR)/../../..
 endif
 
 # Include the main makefile
-include ${MOSROOT}/mos/make/Makefile
+include ${OSW}/src/make/Makefile

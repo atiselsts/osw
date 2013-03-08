@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # use serial python lib included in OSW
 import sys
-sys.path.append('../../../mos/make/scripts')
+sys.path.append('../../../src/make/scripts')
 
 import serial
 import threading
