@@ -240,6 +240,13 @@ class Users():
     def __init__(self, userAttr):
         self._userAttributes = userAttr
         self._userList = []
+        threading.Timer(86400, self.make_copy_24h).start() #1d = 86400s
+        self._isChange = False
+    def make_copy_24h(self):
+        if self._isChange:
+            print("User file old copy made in " + self.make_copy())
+        self._isChange = False
+        threading.Timer(86400, self.make_copy_24h).start() #1d = 86400s
     def is_attribute(self, attrName):
         i=0
         while self._userAttributes.__len__() > i:
@@ -322,17 +329,21 @@ class Users():
         return True
     def make_copy(self):
         tstr = "/" + userFile + str(datetime.datetime.now())[:22]
-        tstr = tstr.replace(' ','_')
-        tstr = tstr.replace(':','-')
-        tstr = tstr.replace('.dat','')
+        tstr = tstr.replace(' ', '_')
+        tstr = tstr.replace(':', '-')
+        tstr = tstr.replace('.dat', '')
         tstr += ".dat"
-        if not os.path.exists(userDirectory+"/archives"):
-            os.makedirs(userDirectory+"/archives")
-        os.rename(userDirectory + "/" + userFile,userDirectory+ "/archives" + tstr)
-        return str(userDirectory+ "/archives" + tstr)
+        if not os.path.exists(userDirectory + "/archives"):
+            os.makedirs(userDirectory + "/archives")
+        filefrom = open(userDirectory + "/" + userFile, "r")
+        fileto = open(userDirectory + "/archives" + tstr, "w")
+        fileto.write(filefrom.read())
+        filefrom.close()
+        fileto.close()
+        return str(userDirectory + "/archives" + tstr)
     def write_in_file(self):
-        print("User file old copy made in " +self.make_copy())
-        f = open(userDirectory + "/" + userFile,"w")
+        self._isChange = True
+        f = open(userDirectory + "/" + userFile, "w")
         tstr = ""
         i=0
         while self._userAttributes.__len__() > i:
@@ -347,7 +358,7 @@ class Users():
             while self._userAttributes.__len__() > j:
                 tstr += str(self._userList[i].get_data(self._userAttributes[j])) + " "
                 j += 1
-            tstr +="\n"
+            tstr += "\n"
             f.write(tstr)
             i += 1
         f.close()
@@ -505,7 +516,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                     qs["log"] = "out"
             if "log" in qs:
                 if qs["log"] == "in":
-                    tsid = random.randint(100000000, 999999999)
+                    tsid = random.randint(10000000000, 99999999999)
                     tuser=allUsers.get_user("name", qs["user"][0])
                     if "level" in tuser:
                         tsma = tsma[:-1]+tuser["level"]
@@ -515,8 +526,8 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                         fi=int(qs["sma"][0][:2])
                     else:
                         fi=0
-                    fi=fi%25
-                    tcod=int(tuser["password"][fi:fi+5],16)
+                    fi=fi%23
+                    tcod=int(tuser["password"][fi:fi+9],16)
                     qs["tsid"]=tsid-tcod
                     tsid=str(tsid)
                     msid = md5.new()
@@ -885,7 +896,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                 if atr in ["name", "password"]:
                     continue
                 else:
-                    formCode += "<p>" + atr + ": " + "<input type='text' class='coded tocode' id='" + tcod
+                    formCode += "<p>" + atr + ": " + "<input autocomplete='off' type='text' class='coded tocode' id='" + tcod
                     formCode += "' value=\"" + tses.to_code(user.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
             formCode += "<p><input type='checkbox' class='md5' id='yesplease' name='password'>Reset passsord.</p>"
             formCode += "<p><input type='hidden' id='randtextsave' name='saveuser'>"
@@ -930,7 +941,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                         if not user.get("name", "") in tabuList:
                             if allUsers.del_user(tses.from_code(qs["name"][0])):
                                 changes["INFO"] = "<h4 class='suc'> Deleted user " + tses.to_code(tses.from_code(qs["name"][0])) + "! </h4>"
-                                #allUsers.write_in_file()
+                                allUsers.write_in_file()
                             else:
                                 changes["INFO"] = "<h4 class='err'> Could not delete user " + tses.to_code(tses.from_code(qs["name"][0])) + "! </h4>"
                         else:
@@ -970,7 +981,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                                         changes["PSW"] = "<h4 class='err'>  Can not reset level 9 password.</h4>"
                                     else:
                                         changes["PSW"] = "<h4 class='suc'>  Password is " + tses.to_code(allUsers.set_psw(username)) + ".</h4>"
-                        #allUsers.write_in_file()
+                        allUsers.write_in_file()
                     else:
                         changes["INFO"] = "<h4 class='err'> Could not save user " + tses.to_code(tses.from_code(qs["name"][0])) + "! </h4>"
                 else:
@@ -999,7 +1010,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                         if allUsers.add_user(userdata):
                             changes["INFO"] = "<h4 class='suc'> New user " + tses.to_code(tusername) + " added!</h4>"
                             changes["PSW"] = "<h4 class='suc'>  Password is " + tses.to_code(allUsers.set_psw(tusername)) + ".</h4>"
-                            #allUsers.write_in_file()
+                            allUsers.write_in_file()
                         else:
                             changes["INFO"] = "<h4 class='err'> Could not add user " + tses.to_code(tusername) + "! </h4>"
                 else:
@@ -1066,7 +1077,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                             else:
                                 print("Nesakrit!!")
                         changes["INFO"] = "<h4 class='suc'> Saved changes! </h4>"
-                        #allUsers.write_in_file()
+                        allUsers.write_in_file()
                     else:
                         changes["INFO"] = "<h4 class='err'> Could not save changes! </h4>"
                 else:
@@ -1085,7 +1096,7 @@ class HttpServerHandler(BaseHTTPRequestHandler):
                     if atr in ["name", "password"]:
                         continue
                     else:
-                        formCode += "<p>" + atr + ": " + "<input type='text' class='coded tocode' id='" + tcod
+                        formCode += "<p>" + atr + ": " + "<input autocomplete='off' type='text' class='coded tocode' id='" + tcod
                         formCode += "' value=\"" + tses.to_code(tuser.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
                 formCode += "<br><p>Password: <input autocomplete='off' type='password' class='tocode' id='psw1' name='password'></p>"
                 formCode += "<p><input type='hidden' id='pswcheck' name='pswcheck'>"
@@ -1698,8 +1709,8 @@ def initalizeUsers():
     uf.close()
     
     if not "name" in allUsers._userAttributes:
-        print("User attribute \"name\" required! Python save old user file in "+allUsers.make_copy())
-        print("New default file made in "+makeDefaultUserFile())
+        print("User attribute \"name\" required! Python save old user file in " + allUsers.make_copy())
+        print("New default file made in " + makeDefaultUserFile())
         uf = open(userDirectory + "/" + userFile,"r")
         i = False
         for line in uf:
@@ -1710,9 +1721,9 @@ def initalizeUsers():
                  allUsers.add_user(line.split())
         uf.close()
     elif not allUsers.get_user("name", "admin"):
-        print("No admin! Python save old user file in "+allUsers.make_copy())
-        print("New default file made in "+makeDefaultUserFile())
-        uf = open(userDirectory + "/" + userFile,"r")
+        print("No admin! Python save old user file in " + allUsers.make_copy())
+        print("New default file made in " + makeDefaultUserFile())
+        uf = open(userDirectory + "/" + userFile, "r")
         i = False
         for line in uf:
              if not i:
@@ -1722,9 +1733,9 @@ def initalizeUsers():
                  allUsers.add_user(line.split())
         uf.close()
     elif not "password" in allUsers._userAttributes:
-        print("User attribute \"password\" required! Python save old user file in "+allUsers.make_copy())
-        print("New default file made in "+makeDefaultUserFile())
-        uf = open(userDirectory + "/" + userFile,"r")
+        print("User attribute \"password\" required! Python save old user file in " + allUsers.make_copy())
+        print("New default file made in " + makeDefaultUserFile())
+        uf = open(userDirectory + "/" + userFile, "r")
         i = False
         for line in uf:
              if not i:
@@ -1734,8 +1745,8 @@ def initalizeUsers():
                  allUsers.add_user(line.split())
         uf.close()
     elif not allUsers.check_psw():
-        print("Passwords do not match the md5 standard! Python save old user file in "+allUsers.make_copy())
-        print("New default file made in "+makeDefaultUserFile())
+        print("Passwords do not match the md5 standard! Python save old user file in " + allUsers.make_copy())
+        print("New default file made in " + makeDefaultUserFile())
         uf = open(userDirectory + "/" + userFile,"r")
         i = False
         for line in uf:
