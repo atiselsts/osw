@@ -70,7 +70,7 @@ def printLine(line):
 
 def help(isError):
     sys.stderr.write("Usage:\n")
-    sys.stderr.write("  -a <arch>, --arch     Target architecture (defalt: {})\n".format(architecture))
+    sys.stderr.write("  -a <arch>, --arch     Target architecture (default: {})\n".format(architecture))
     sys.stderr.write("  -t <target>, --target Target OS (default: {0})\n".format(targetOS))
     sys.stderr.write("  -o, --output <file>   Output to file, '-' for stdout (default: {0})\n".format(outputFileName))
     sys.stderr.write("  -p, --path <path>     Path to the target OS installation (default: {0})\n".format(pathToOS))
@@ -94,7 +94,7 @@ def parseCommandLine(argv):
                     "path=", "target=", "verbose", "version"])
     except getopt.GetoptError as err:
         # print help information and exit:
-        print (str(err)) # will print something like "option -a not recognized"
+        print(str(err)) # will print something like "option -a not recognized"
         help(True)
 
     isError = False

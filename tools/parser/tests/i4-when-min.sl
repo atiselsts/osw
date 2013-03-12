@@ -1,8 +1,8 @@
 // TODO: this is compiling, but not correctly
 
-NetworkRead NeighborLight(Light);
+read RemoteLight;
 
-define MinNeighborLight min(NeighborLight);
+define MinNeighborLight min(RemoteLight);
 
 when MinNeighborLight:
 // do something

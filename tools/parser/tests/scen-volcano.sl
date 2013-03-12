@@ -27,11 +27,12 @@ when EventDetectionFunction > EVENT_DETECTION_THRESHOLD:
 end;
 
 // check for data query command
-NetworkRead RemoteCommand(Command, Timestamp);
-when RemoteCommand.Command == COMMAND_REQUEST_DATA:
+read RemoteCommand;
+read RemoteTimestamp;
+when RemoteCommand == COMMAND_REQUEST_DATA:
     // collect all data that was read in interval [Timestamp, Timestamp + 60]
     Output Network, file "SensorData.bin",
     where 
-        RemoteCommand.Timestamp >= Timestamp
-        and RemoteCommand.Timestamp <= add(Timestamp, DATA_COLLECTION_INTERVAL);
+        RemoteTimestamp >= Timestamp
+        and RemoteTimestamp <= add(Timestamp, DATA_COLLECTION_INTERVAL);
 end

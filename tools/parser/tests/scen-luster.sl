@@ -7,13 +7,15 @@
 // On data storage node
 const DATA_QUERY_COMMAND 1;
 
-NetworkRead RemoteLightPacket(Light, Address, Timestamp);
-Output File (RemoteLightPacket), filename "LightData.bin";
+// remote light packet
+read RemoteLight; read RemoteAddress, read RemoteTimestamp;
+Output File (RemoteLight, RemoteAddress, RemoteTimestamp), filename "LightData.bin";
 
-NetworkRead StorageQueryPacket(Command, Address, Timestamp);
-when StorageQueryPacket.command = DATA_QUERY_COMMAND:
+// storage query packet
+read RemoteCommand;
+when RemoteCommand = DATA_QUERY_COMMAND:
     Output Network, protocol LiteTDMA, file "LightData.bin",
         where 
-            StorageQueryPacket.Address = Address
-            and StorageQueryPacket.Timestamp <= TimeStamp;
+            Address = RemoteAddress 
+            and Timestamp >= RemoteTimestamp;
 end

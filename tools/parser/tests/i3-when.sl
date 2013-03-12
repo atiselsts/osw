@@ -1,7 +1,7 @@
 // condition based on network component
 
-NetworkRead NeighborLight(Light);
 
-when NeighborLight:
+read RemoteLight;
+when RemoteLight:
 // do something
 end;

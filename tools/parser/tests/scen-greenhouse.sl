@@ -8,11 +8,11 @@
 const MIN_HUMIDITY_THRESHOLD 0xBCF;
 
 // take soil humidity out of network
-NetworkRead NeighborSoilHumidity(SoilHumidity);
+read RemoteSoilHumidity;
 
 // define the minimal humidity as minimum of values
 // in last 60 seconds, max 20 value aray
-define MinHumidity min(take(NeighborSoilHumidity, 20, 60s));
+define MinHumidity min(take(RemoteSoilHumidity, 20, 60s));
 
 read MinHumidity;
 when MinHumidity < MIN_HUMIDITY_THRESHOLD:

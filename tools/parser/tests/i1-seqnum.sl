@@ -2,8 +2,8 @@
 
 const COMMAND_GET 17;
 
-NetworkRead CommandWithSeqnum (Command, SequenceNumber);
-
-when CommandWithSeqnum.Command = COMMAND_GET:
-   use print, format "got seqnum %d\n", arg1 CommandWithSeqnum.SequenceNumber, once;
+read RemoteCommand;
+read RemoteSequenceNumber;
+when RemoteCommand = COMMAND_GET:
+   use print, format "got seqnum %d\n", arg1 RemoteSequenceNumber, once;
 end

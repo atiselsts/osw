@@ -1,7 +1,8 @@
 // condition based on network component
 
-NetworkRead NeighborLight(Address, Light);
+read RemoteAddress;
+read RemoteLight;
 
-when NeighborLight.Light:
+when RemoteLight:
 // do something
 end;
