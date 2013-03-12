@@ -54,6 +54,7 @@ class Frame(wx.Frame):
         self.examples = dict()
         self.initUI()
         self.SetBackgroundColour("white")
+		
         flag = aui.AUI_MGR_ALLOW_ACTIVE_PANE | \
         aui.AUI_MGR_AUTONB_NO_CAPTION | aui.AUI_MGR_SMOOTH_DOCKING | \
         aui.AUI_MGR_TRANSPARENT_HINT | aui.AUI_NB_CLOSE_ON_TAB_LEFT | \
