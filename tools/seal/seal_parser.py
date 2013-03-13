@@ -89,7 +89,6 @@ class SealParser():
       "define": "DEFINE_TOKEN",
       "config": "CONFIG_TOKEN",
       "const": "CONST_TOKEN",
-      "set": "SET_TOKEN",
       "pattern": "PATTERN_TOKEN",
       "load": "LOAD_TOKEN",
       "where": "WHERE_TOKEN",
@@ -135,28 +134,60 @@ class SealParser():
         t.value = (int(t.value, 16), '')
         return t
 
+    # this supports values like: 1h3min5s, 100lx, 30C, 44%
     def t_DECIMAL_INTEGER_LITERAL(self, t):
-        r'[+-]?[0-9]+[a-zA-Z_]*'
-        prefix, suffix = '', ''
-        parsingSign = True
-        parsingPrefix = False
+        r'[+-]?[0-9]+[0-9a-zA-Z_%]*'
+
+        # find sign
         sign = 1
+        if t.value[0] == '+':
+            t.value = t.value[1:]
+        elif t.value[0] == '-':
+            t.value = t.value[1:]
+            sign = -1
+
+        # find the value and the suffix
+        prefixList = []
+        suffixList = []
+        prefix, suffix = '', ''
+        parsingPrefix = True
         for c in t.value:
-            if parsingSign:
-                parsingSign = False
-                parsingPrefix = True
-                if c == '+':
-                    continue
-                if c == '-':
-                    sign = -1
-                    continue
             if parsingPrefix:
                 if c >= '0' and c <= '9':
                     prefix += c
                     continue
                 parsingPrefix = False
-            suffix += c.lower()
-        t.value = (int(prefix) * sign, suffix)
+                suffix = c.lower()
+#                prefix = ''
+            else:
+                if c >= '0' and c <= '9':
+                    prefixList.append(prefix)
+                    suffixList.append(suffix)
+                    parsingPrefix = True
+                    prefix = c
+                    suffix = ''
+                    continue
+                suffix += c.lower()
+
+
+        prefixList.append(prefix)
+        suffixList.append(suffix)
+
+        lst = zip(prefixList, suffixList)
+
+        if isTimeValue(suffixList[-1]):
+            # convet to milliseconds for simpler later processing
+            lst = convertTimeValue(lst)
+            if lst is None:
+                self.errorMsgLexer("Unknown format literal for time value\n".format(suffix))
+                t.value = (1000, '')
+                return t
+        elif len(prefixList) != 1 or len(suffixList) != 1:
+            self.errorMsgLexer("Unknown format for decimal integer value '{0}'\n".format(t.value))
+            t.value = (0, '')
+            return t
+
+        t.value = (int(lst[0][0]) * sign, lst[0][1])
         return t
 
     # XXX: this is just a hack
@@ -208,7 +239,6 @@ class SealParser():
                        | system_config
                        | pattern_declaration
                        | const_statement 
-                       | set_statement
                        | define_statement
                        | parameters_statement
                        | load_statement
@@ -216,7 +246,7 @@ class SealParser():
                        | error END_TOKEN
                        | error ';'
         '''
-        # use case, when block, parameter, "set" statement, or empty statement
+        # use case, when block, parameter, other statements, or empty statement
         if len(p) == 2:
             p[0] = p[1]
         # error token
@@ -255,11 +285,6 @@ class SealParser():
             self.errorMsg(p, "Constant '{}' already defined, ignoring".format(name), False)
         else:
             components.componentRegister.systemConstants[name] = value
-
-    def p_set_statement(self, p):
-        '''set_statement : SET_TOKEN IDENTIFIER_TOKEN functional_expression ';'
-        '''
-        p[0] = SetStatement(p[2], Expression(right=p[3]))
 
     def p_pattern_declaration(self, p):
         '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'
@@ -481,3 +506,7 @@ class SealParser():
     def errorMsg(self, p, msg, doSetError = True):
         if doSetError: self.isError = True
         self.printMsg("Syntax error at line {0}: {1}\n".format(p.lineno(1), msg))
+
+    def errorMsgLexer(self, msg, doSetError = True):
+        if doSetError: self.isError = True
+        self.printMsg("Syntax error: {0}\n".format(msg))

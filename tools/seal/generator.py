@@ -406,7 +406,7 @@ endif
                 code = inputFile.read()
                 outputFile.write(code.replace("@APPLICATION_FIELDS@", 
                              components.componentRegister.getPacketFields("sdcard")))
-      
+
 ###############################################
 class OSWGenerator(Generator):
     def __init__(self):

@@ -75,6 +75,9 @@ def mergeParameters(parameters, additionalParametrs):
             result[p[0]] = p[1]
     return result
 
+def asConstant(value):
+    return value.asConstant(componentRegister)
+
 ######################################################
 class BranchCollection(object):
     def __init__(self):
@@ -148,7 +151,7 @@ class UseCase(object):
         # associated use cases (e.g. "use print, format "%d", light" will case light readings to be generated)
         # self.associatedUseCases = set()
 
-    def setup(self, parameters, conditions, branchNumber, numInBranch):
+    def setup(self, parameters, conditions, branchNumber, numInBranch, isRead):
         self.associatedUseCase = None
         self.parentUseCase = None
 
@@ -172,7 +175,7 @@ class UseCase(object):
                     componentRegister.userError("Associate parameter specifies unknown component '{}'\n".format(compname))
                 else:
                     self.associatedUseCase = comp.addUseCase(
-                        {}, conditions = [], branchNumber = 0)
+                        {}, conditions = [], branchNumber = 0, isRead = False)
                     self.associatedUseCase.parentUseCase = self
                 continue
 
@@ -196,11 +199,13 @@ class UseCase(object):
         #print "  branchNumber=", self.branchNumber
         self.outputUseCase = None
 
+        self.isRead = isRead
+        if isRead: self.component.readAsSensor = True
 
         # TODO: automate this using reflection!
         p = self.parameters.get("period")
         if p:
-            self.period = p.getRawValue()
+            self.period = p.getRawValue(componentRegister)
         else:
             self.period = None
         p = self.parameters.get("pattern")
@@ -222,13 +227,26 @@ class UseCase(object):
             self.times = None
         p = self.parameters.get("duration")
         if p and p.value is not None:
-            self.duration = p.getRawValue()
+            self.duration = p.getRawValue(componentRegister)
         else:
             self.duration = None
 
+        p = self.parameters.get("initialtimeout")
+        if p and p.value is not None:
+            self.initialTimeout = p.getRawValue(componentRegister)
+        else:
+            self.initialTimeout = None
+
         p = self.parameters.get("blink")
         if p and p.value is not None:
-            blink = int(p.value)
+            if p.value is True:
+                # boolean value ("on")
+                # use "period" value, or 100ms if not given
+                blink = self.period if self.period else 1000
+            else:
+                # integer value given, use the value
+                blink = int(p.value)
+
             if blink:
                 self.times = 2
                 self.period = blink
@@ -317,12 +335,18 @@ class UseCase(object):
 
     def generateConstants(self, outputFile):
         ucname = self.component.getNameUC()
+        if self.branchNumber != 0:
+            ucname += self.branchName.upper()
+        # period
         if self.period:
-            if self.branchNumber != 0:
-                ucname += self.branchName.upper()
             outputFile.write(
-                "#define {0}_PERIOD{1}    {2}\n".format(
+                "#define {0}_PERIOD{1}    {2}ul\n".format(
                     ucname, self.numInBranch, self.period))
+        # init timeout
+        if self.initialTimeout:
+            outputFile.write(
+                "#define {0}_INITIAL_TIMEOUT{1}    {2}ul\n".format(
+                    ucname, self.numInBranch, self.initialTimeout))
 
     def generateVariables(self, outputFile):
         if self.generateAlarm:
@@ -479,8 +503,11 @@ class UseCase(object):
 
             if self.associatedUseCase:
                 self.associatedUseCase.generateAssociatedStartCode(outputFile)
+            
+            processAsActuator = isinstance(self.component, Actuator) and not self.isRead
+            processAsSensor = isinstance(self.component, Sensor) or self.isRead
 
-            if type(self.component) is Actuator:
+            if processAsActuator:
                 if self.component.name.lower() == "print":
                     self.generatePrintCallbacks(outputFile)
                 elif self.on:
@@ -499,7 +526,7 @@ class UseCase(object):
                     if not self.warnIfNone(useFunction, "useFunction"):
                         outputFile.write("    {0};\n".format(useFunction))
 
-            elif type(self.component) is Sensor:
+            elif processAsSensor:
                 intTypeName = self.component.getDataType()
 
                 if self.component.syncOnlySensor:
@@ -533,6 +560,7 @@ class UseCase(object):
                             offFunc = s.getParameterValue("offFunction")
                             if offFunc:
                                 outputFile.write("    {};\n".format(offFunc))
+
                 elif self.component.isRemote():
                     prefix = self.component.networkComponent.getPrefix()
                     if len(self.component.remoteFields) > 1:
@@ -644,8 +672,13 @@ class UseCase(object):
                 outputFile.write("    {0}{1}{2}Process();\n".format(
                         self.component.getNameCC(), self.branchName, self.numInBranch))
             else:
-                outputFile.write("    {0}{1}{2}Callback(IS_FROM_BRANCH_START);\n".format(
-                        self.component.getNameCC(), self.branchName, self.numInBranch))
+                if self.initialTimeout:
+                    outputFile.write("    alarmSchedule(&{0}{1}{2}Alarm, {3}_INITIAL_TIMEOUT);\n".format(
+                            self.component.getNameCC(), self.branchName, self.numInBranch,
+                            self.component.getNameUC()))
+                else:
+                    outputFile.write("    {0}{1}{2}Callback(IS_FROM_BRANCH_START);\n".format(
+                            self.component.getNameCC(), self.branchName, self.numInBranch))
 
     def generateBranchExitCode(self, outputFile):
         # should be able to execute this code even when this UC has a parent;
@@ -758,7 +791,7 @@ class Component(object):
             if r: result += r
         return result
 
-    def addUseCase(self, parameters, conditions, branchNumber):
+    def addUseCase(self, parameters, conditions, branchNumber, isRead):
         numInBranch = 0
         for uc in self.useCases:
             if uc.branchNumber == branchNumber:
@@ -788,7 +821,7 @@ class Component(object):
                 else:
                     finalParameters[pname] = self.convertToParameterValue(pvalue, uc, unsetAsTrue = True)
 
-        uc.setup(finalParameters.items(), conditions, branchNumber, numInBranch)
+        uc.setup(finalParameters.items(), conditions, branchNumber, numInBranch, isRead)
         self.useCases.append(uc)
         return uc
 
@@ -874,6 +907,10 @@ class Component(object):
             for s in self.subsensors:
                 s.generatePrereadCallback(outputFile)
 
+        if isinstance(self, Actuator):
+            if self.readAsSensor:
+                self.generateReadFunctions(outputFile, None)
+
         for uc in self.useCases:
             uc.generateCallbacks(outputFile, outputs)
 
@@ -911,6 +948,52 @@ class Component(object):
 class Actuator(Component):
     def __init__(self, name, specification):
         super(Actuator, self).__init__(name, specification)
+        self.syncOnlySensor = False
+        self.readAsSensor = False
+
+    def getDataSize(self):
+        return 4
+
+    def getDataType(self):
+        return "int32_t"
+      
+    def generateSubReadFunctions(self,  outputFile):
+        readFunctionSuffix = ""
+
+        outputFile.write("inline {0} {1}ReadRaw{2}(bool *__unused)\n".format(
+                self.getDataType(), self.getNameCC(), readFunctionSuffix))
+        outputFile.write("{\n")
+
+        specifiedReadFunction = self.getParameterValue("readFunction", None)
+
+        if specifiedReadFunction is None:
+            componentRegister.userError("Actuator '{}' has no valid read function!\n".format(self.name))
+            specifiedReadFunction = "0"
+
+        outputFile.write("    return {};\n".format(specifiedReadFunction))
+        outputFile.write("}\n\n")
+
+        return "{0}ReadRaw{1}(isFilteredOut)".format(self.getNameCC(), readFunctionSuffix)
+
+    def generateReadFunctions(self, outputFile, useCase):
+        readFunctionSuffix = ""
+        self.sensorReadFunctionParams = self.parameters
+
+        subReadFunction = self.generateSubReadFunctions(outputFile)
+
+        # TODO: cache?
+
+        # generate reading and processing function
+        outputFile.write("static inline {0} {1}ReadProcess{2}(bool *isFilteredOut)\n".format(
+                self.getDataType(), self.getNameCC(), readFunctionSuffix))
+        outputFile.write("{\n")
+        outputFile.write("    return {};\n".format(subReadFunction))
+        outputFile.write("}\n\n")
+
+    def generateVariables(self, outputFile):
+        super(Actuator, self).generateVariables(outputFile)
+        if self.readAsSensor:
+            outputFile.write("static {} {}Value;\n".format(self.getDataType(), self.getNameCC()))
 
 ######################################################
 class Sensor(Component):
@@ -1278,7 +1361,7 @@ class Sensor(Component):
         subReadFunction = self.generateSubReadFunctions(
             outputFile, functionTree.arguments[0], root)
 
-        alpha = functionTree.arguments[1].asConstant()
+        alpha = asConstant(functionTree.arguments[1])
         if alpha is None:
             componentRegister.userError("2nd argument of EWMA() function is expected to be a constant!\n")
             return ""
@@ -1347,9 +1430,9 @@ class Sensor(Component):
         adjustmentWeight = None
 
         if len(functionTree.arguments) > 1:
-            numSamples = functionTree.arguments[1].asConstant()
+            numSamples = asConstant(functionTree.arguments[1])
         if len(functionTree.arguments) > 2:
-            adjustmentWeight = functionTree.arguments[2].asConstant()
+            adjustmentWeight = asConstant(functionTree.arguments[2])
 
         if numSamples == None: numSamples = 3
         if adjustmentWeight == None: adjustmentWeight = 1
@@ -1390,9 +1473,9 @@ class Sensor(Component):
         adjustmentWeight = None
 
         if len(functionTree.arguments) > 1:
-            numSamples = functionTree.arguments[1].asConstant()
+            numSamples = asConstant(functionTree.arguments[1])
         if len(functionTree.arguments) > 2:
-            adjustmentWeight = functionTree.arguments[2].asConstant()
+            adjustmentWeight = asConstant(functionTree.arguments[2])
 
         if numSamples == None: numSamples = 3
         if adjustmentWeight == None: adjustmentWeight = 1
@@ -1428,7 +1511,7 @@ class Sensor(Component):
     def generateChangedFunction(self, outputFile, functionTree, root):
         # TODO: allow take()!
 
-        milliseconds = functionTree.arguments[1].asConstant()
+        milliseconds = asConstant(functionTree.arguments[1])
         if milliseconds is None:
             componentRegister.userError("Second argument of changed() function is expected to be a constant!\n")
             return ""
@@ -1509,7 +1592,7 @@ class Sensor(Component):
         return funName + "(isFilteredOut)"
 
     def generatePowerFunction(self, outputFile, functionTree, root):
-        power = functionTree.arguments[1].asConstant()
+        power = asConstant(functionTree.arguments[1])
         if power is None:
             componentRegister.userError("Second argument of power() function is expected to be a constant!\n")
             return ""
@@ -1564,8 +1647,8 @@ class Sensor(Component):
         subReadFunction = self.generateSubReadFunctions(
             outputFile, functionTree.arguments[0], root)
 
-        thresholdMin = functionTree.arguments[1].asConstant()
-        thresholdMax = functionTree.arguments[2].asConstant()
+        thresholdMin = asConstant(functionTree.arguments[1])
+        thresholdMax = asConstant(functionTree.arguments[2])
         if thresholdMin is None or thresholdMax is None:
             componentRegister.userError("Second and third arguments of filterRange() function is expected to be constants!\n")
             return ""
@@ -1586,7 +1669,7 @@ class Sensor(Component):
 
         subReadFunction = self.generateSubReadFunctions(
             outputFile, functionTree.arguments[0], root)
-        threshold = functionTree.arguments[1].asConstant()
+        threshold = asConstant(functionTree.arguments[1])
         if threshold is None:
             componentRegister.userError("Second argument of {}() function is expected to be a constant!\n".format(
                     functionTree.function))
@@ -1683,13 +1766,13 @@ class Sensor(Component):
         subReadFunction = self.generateSubReadFunctions(
             outputFile, functionTree.arguments[0], None)
 
-        numToTake = functionTree.arguments[1].asConstant()
+        numToTake = asConstant(functionTree.arguments[1])
         if numToTake is None:
             componentRegister.userError("Second argument of take() function is expected to be a constant!\n")
             return ""
 
         if len(functionTree.arguments) > 2:
-            timeToTake = functionTree.arguments[2].asConstant()
+            timeToTake = asConstant(functionTree.arguments[2])
             if timeToTake:
                 # generate takeRecent function;
                 # ignore "lazy" parameter in that case.
@@ -1949,10 +2032,10 @@ class Sensor(Component):
             if isinstance(functionTree.function, SealValue):
                 name = functionTree.function.firstPart
                 # print "name = ", name
-                if name in componentRegister.systemStates:
-                    # special case for variables ("states")
-                    # TODO: should replace code here for X.Y type values
-                    return "sealState_" + name
+#                if name in componentRegister.systemStates:
+#                    # special case for variables ("states")
+#                    # TODO: should replace code here for X.Y type values
+#                    return "sealState_" + name
                 if root and root.containingOutputComponent:
                     # yeah!
                     componentName = root.containingOutputComponent.componentUseCase.outputUseCase.getNameCC()
@@ -2804,24 +2887,24 @@ class SetUseCase(object):
 
 
 ######################################################
-class SystemState(object):
-    def __init__(self, name):
-        self.name = name
-        # list of use cases (i.e. when the state is changed)
-        self.useCases = []
-        # list of conditions that use this system state
-        self.dependentConditions = set()
-
-    def addUseCase(self, expression, conditions, branchNumber):
-        isNew = len(self.useCases) == 0
-        self.useCases.append(
-            SetUseCase(self, expression, conditions, branchNumber, isNew))
-
-    def generateVariables(self, outputFile):
-        self.useCases[0].generateVariables(outputFile)
-
-    def getVariableName(self):
-        return "sealState_" + self.name
+#class SystemState(object):
+#    def __init__(self, name):
+#        self.name = name
+#        # list of use cases (i.e. when the state is changed)
+#        self.useCases = []
+#        # list of conditions that use this system state
+#        self.dependentConditions = set()
+#
+#    def addUseCase(self, expression, conditions, branchNumber):
+#        isNew = len(self.useCases) == 0
+#        self.useCases.append(
+#            SetUseCase(self, expression, conditions, branchNumber, isNew))
+#
+#    def generateVariables(self, outputFile):
+#        self.useCases[0].generateVariables(outputFile)
+#
+#    def getVariableName(self):
+#        return "sealState_" + self.name
 
 ######################################################
 class NetworkComponent(object):
@@ -2943,13 +3026,14 @@ class ComponentRegister(object):
 
     # load all components for this platform from a file
     def load(self, architecture):
+        self.architecture = architecture
         # reset components
         self.actuators = {}
         self.sensors = {}
         self.outputs = {}
         self.networkComponents = {}
         self.systemParams = []
-        self.systemStates = {}
+#        self.systemStates = {}
         self.systemConstants = {}
         self.parameterDefines = {}
         self.virtualComponents = {}
@@ -2998,7 +3082,11 @@ class ComponentRegister(object):
             # accept any type of object
             return self.findComponentByName(name)
         if keyword == "read":
-            return self.sensors.get(name, None)
+            # accept sensors and also some actuators (like LEDs) that have readable state
+            o = self.sensors.get(name, None)
+            if o is None:
+                o = self.actuators.get(name, None)
+            return o
         elif keyword == "output":
             return self.outputs.get(name, None)
 
@@ -3083,7 +3171,7 @@ class ComponentRegister(object):
         c.base = None
 
         # this is required because copy component don't have bases[] set up
-        basenames = c.getAllBasenames()
+        basenames = c.getAllBasenames(self)
         for basename in basenames:
             if c.name == basename:
                 self.userError("Virtual component '{0}' depends on self, ignoring\n".format(
@@ -3168,7 +3256,7 @@ class ComponentRegister(object):
 
     #######################################################################
     def chainVirtualComponentBases(self, c):
-        basenames = c.getAllBasenames()
+        basenames = c.getAllBasenames(self)
         for basename in basenames:
             if c.name == basename:
                 self.userError("Virtual component '{0}' depends on self, ignoring\n".format(
@@ -3302,11 +3390,11 @@ class ComponentRegister(object):
         # find the component
         o = self.findComponentByKeyword(keyword, name)
         if o is None:
-            self.userError("Component '{0}' not known or not supported for architecture '{1}'\n".format(
+            self.userError("Component '{0}' not known, not supported for architecture '{1}', or referenced by a wrong keyword\n".format(
                     name, self.architecture))
             return None
         # add use case to the component
-        uc = o.addUseCase(parameters, conditions, branchNumber)
+        uc = o.addUseCase(parameters, conditions, branchNumber, keyword == "read")
         if isinstance(o, Output):
             o.addOutputUseCase(uc, fields)
         return uc
@@ -3367,29 +3455,29 @@ class ComponentRegister(object):
             if not s1: continue
             s.alsoSensorIds.add(s1.getSystemwideID())
 
-    def setState(self, name):
-        # add the state itself, if not already
-        if name not in self.systemStates:
-            self.systemStates[name] = SystemState(name)
-            name = "sealState_" + name
-            # also add a kind of sensor, to later allow these state values to be read
-            if name in self.sensors:
-                self.userError("State '{0}' name duplicates a real sensors for architecture '{1}'\n".format(
-                        name, self.architecture))
-                return
-            # create a custom specification for this sensor
-            spec = copy.copy(self.sensors.get("null").specification)
-            spec.useFunction.value = name
-            spec.readFunction.value = spec.useFunction.value
-            # spec.dataType = componentRegister.module.SealParameter(value.getType())
-            # add the sensor to array
-            self.sensors[name] = Sensor(name, spec)
+#    def setState(self, name):
+#        # add the state itself, if not already
+#        if name not in self.systemStates:
+#            self.systemStates[name] = SystemState(name)
+#            name = "sealState_" + name
+#            # also add a kind of sensor, to later allow these state values to be read
+#            if name in self.sensors:
+#                self.userError("State '{0}' name duplicates a real sensors for architecture '{1}'\n".format(
+#                        name, self.architecture))
+#                return
+#            # create a custom specification for this sensor
+#            spec = copy.copy(self.sensors.get("null").specification)
+#            spec.useFunction.value = name
+#            spec.readFunction.value = spec.useFunction.value
+#            # spec.dataType = componentRegister.module.SealParameter(value.getType())
+#            # add the sensor to array
+#            self.sensors[name] = Sensor(name, spec)
 
     def generateVariables(self, outputFile):
-        for s in self.systemStates.values():
-            s.generateVariables(outputFile)
+#        for s in self.systemStates.values():
+#            s.generateVariables(outputFile)
         for p in self.patterns.values():
-            p.generateVariables(outputFile)
+            p.generateVariables(outputFile, self)
 
     def getAllComponents(self):
         return set(self.actuators.values()).union(set(self.sensors.values())).union(set(self.outputs.values()))
@@ -3426,15 +3514,15 @@ class ComponentRegister(object):
         if n:
             return n.replaceCode(parameterName, condition)
 
-        s = self.systemStates.get(componentName, None)
-        if s != None:
-            if parameterName.lower() != 'value':
-                self.userError("System state '{}' has only 'value' parameter, not '{}'!\n".format(componentName, parameterName))
-                return "false"
-            if condition:
-                condition.dependentOnStates.add(s)
-                s.dependentConditions.add(condition)
-            return "sealState_" + componentName
+#        s = self.systemStates.get(componentName, None)
+#        if s != None:
+#            if parameterName.lower() != 'value':
+#                self.userError("System state '{}' has only 'value' parameter, not '{}'!\n".format(componentName, parameterName))
+#                return "false"
+#            if condition:
+#                condition.dependentOnStates.add(s)
+#                s.dependentConditions.add(condition)
+#            return "sealState_" + componentName
 
         c = self.findComponentByName(componentName)
         if c == None:
@@ -3464,22 +3552,24 @@ class ComponentRegister(object):
                 c.markAsUsed()
                 return errorFunction
             else:
-                self.userError("Parameter '{0}' for component '{1}' has no error attribute!'\n".format(parameterName, componentName))
+                self.userError("Parameter '{0}' for component '{1}' has no error attribute!'\n".format(
+                        parameterName, componentName))
                 return "false"
 
         if parameterName.lower() == 'value':
-            if type(c) is not Sensor:
+            if not isinstance(c, Sensor) and not isinstance(c, Actuator):
+                # TODO: understand this!
                 if inParameter: return componentName
-                self.userError("Parameter '{0}' for component '{1}' is not readable!\n".format(parameterName, componentName))
+                self.userError("Parameter '{0}' for component '{1}' is not readable!\n".format(
+                        parameterName, componentName))
                 return "false"
 
             # new code:
             if not c.isUsed():
-#                if inParameter:
-#                    print "inParameter of component called '", inParameter.name, "'"
-#                else:
-                self.userError("Sensor '{0}' used in an expression, but never read!\n".format(componentName))
+                typename = "Sensor" if isinstance(c, Sensor) else "Actuator"
+                self.userError("{0} '{1}' used in an expression, but never read!\n".format(typename, componentName))
                 return "false"
+
             if condition: condition.dependentOnPeriodicSensors.add(c.getNameCC())
             return c.getNameCC() + "Value"
 

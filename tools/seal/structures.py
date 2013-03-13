@@ -20,7 +20,7 @@
 # OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
 # ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-import string, sys
+import string, sys, math
 ########################################################
 
 INDENT_STRING = "    "  # indent new code level with two spaces
@@ -28,21 +28,88 @@ def getIndent(indent):
     # take indent string n times
     return INDENT_STRING * indent
 
-def suffixTransform(value, suffix):
+def suffixTransform(value, suffix, componentRegister):
     if suffix is None or suffix == '':
         return value
-    if suffix == 's':
-        return value * 1000 # seconds to milliseconds
+
+    # --- time values --
+    if suffix == 'd':
+        return value * 24 * 60 * 60 * 1000 # days to milliseconds
+    if suffix == 'h':
+        return value * 60 * 60 * 1000 # hours to milliseconds
     if suffix == 'min':
         return value * 60 * 1000 # minutes to milliseconds
+    if suffix == 's':
+        return value * 1000      # seconds to milliseconds
     if suffix == 'ms':
-        return value        # milliseconds to milliseconds
+        return value             # milliseconds to milliseconds
     if suffix == 'us':
-        return value / 1000.  # milliseconds to microeconds
+        return value / 1000      # milliseconds to microeconds
+
+    # --- temperature ---
+    if suffix == 'c':
+        # SHT75 / SHT11 sensor
+        if componentRegister.architecture in ["telosb", "sm3", "xm1000"]:
+            return 100 * value + 3960
+        print("Luxes not handled correctly on architecture {1} at the moment\n".format(
+                componentRegister.architecture))
+        return value
+
+    # --- relative humidity values ---
+    if suffix == '%':
+        if componentRegister.architecture in ["telosb", "sm3", "xm1000"]:
+            D = 0.00164025 - 1.12e-05 * (4 - value)
+            if D < 0: return 0
+            value1 = (0.0405 + math.sqrt(D)) / 5.6e-06
+            if value1 < 0: value1 = -value1
+            value2 = (0.0405 - math.sqrt(D)) / 5.6e-06
+            if value2 < 0: value2 = -value2
+            return int(value1 if value1 < value2 else value2)
+        print("Relative humidity per cent not handled correctly on architecture {1} at the moment\n".format(
+                componentRegister.architecture))
+        return value
+
+    # --- luxes ---
+    if suffix == 'lx' or suffix == 'lux':
+        if componentRegister.architecture == "telosb":
+            # for TSR sensor
+            return int(value / 0.4693603515625)
+        if componentRegister.architecture == "sm3":
+            # this should work on both ISL and SQ 1xx light sensors
+            return value # TODO
+        print("Luxes not handled correctly on architecture {1} at the moment\n".format(
+                componentRegister.architecture))
+        return value
+
     # default case: ignore the suffix
     print("Unknown suffix '{0}' for value {1}\n".format(suffix, value))
     # TODO: componentRegister.userError("Unknown suffix '{0}' for value {1}\n".format(suffix, value))
     return value
+
+def isTimeValue(suffix):
+    return suffix in ["d", "h", "s", "min", "ms", "us"]
+
+def convertTimeValue(array):
+    result = 0
+    for (value, suffix) in array:
+        value = int(value)
+        if suffix == 'd':
+            result += value * 86400 * 1000
+        elif suffix == 'h':
+            result += value * 3600 * 1000
+        elif suffix == 'min':
+            result += value * 60 * 1000
+        elif suffix == 's':
+            result += value * 1000
+        elif suffix == 'ms':
+            result += value
+        elif suffix == 'us':
+            result += value / 1000 # TODO?
+        else:
+            return None
+
+    # always use milliseconds in the end
+    return zip([result], ['ms'])
 
 def toCamelCase(s):
     if s == '': return ''
@@ -101,12 +168,19 @@ class FunctionTree(object):
             self.function = function[1].lower()
         self.arguments = arguments
 
-    def asConstant(self):
+    def isConstant(self):
+        return len(self.arguments) == 0 \
+            and not isinstance(self.function, SealValue) \
+            and (isinstance(const, int) \
+                or isinstance(const, long) \
+                or isinstance(const, float))
+
+    def asConstant(self, componentRegister):
         if len(self.arguments):
             return None
         if isinstance(self.function, SealValue):
             return None
-        const = self.function.getRawValue()
+        const = self.function.getRawValue(componentRegister)
         if isinstance(const, int) \
                 or isinstance(const, long) \
                 or isinstance(const, float):
@@ -333,13 +407,13 @@ class Value(object):
     def lower(self):
         return self # already lower()'ed
 
-    def getRawValue(self):
+    def getRawValue(self, componentRegister):
         if not (isinstance(self.value, int) or isinstance(self.value, long)):
             return self.value
-        return suffixTransform(self.value, self.suffix)
+        return suffixTransform(self.value, self.suffix, componentRegister)
 
     def getCode(self):
-#        print "getCode for", self.value, self.suffix
+        # print "getCode for", self.value, self.suffix
         if self.value is None:
             return None
         assert not isinstance(self.value, Value)
@@ -357,9 +431,9 @@ class Value(object):
 
     def getCodeForGenerator(self, componentRegister, condition, inParameter):
         # print " Value", self.value
-        if type(self.value) is SealValue:
+        if isinstance(self.value, SealValue):
             return self.value.getCodeForGenerator(componentRegister, condition, inParameter)
-        return self.getCode()
+        return str(self.getRawValue(componentRegister))
 
     def getType(self):
         if typeIsString(self.value):
@@ -370,10 +444,6 @@ class Value(object):
 
     def asString(self):
         return self.getCode()
-#        if type(self.value) is bool:
-#            return str(self.value).lower()
-#        # TODO: convert time values to milliseconds?
-#        return str(self.value)
 
     def collectImplicitDefines(self, containingComponent):
         return []
@@ -410,7 +480,7 @@ class SealValue(object):
 
     def getCodeForGenerator(self, componentRegister, condition, inParameter):
         if isinstance(self.firstPart, Value):
-            return self.firstPart.getCode()
+            return self.firstPart.getCodeForGenerator(componentRegister, condition, inParameter)
 
         # print "SealValue: getCodeForGenerator", self.firstPart
 
@@ -581,12 +651,12 @@ class PatternDeclaration(object):
     def getVariableName(self):
         return "pattern_" + self.name
 
-    def generateVariables(self, outputFile):
+    def generateVariables(self, outputFile, componentRegister):
         if self.isUsec: arrayType = "double"
         else: arrayType = "uint32_t"
         outputFile.write("{} {}[] = {}\n".format(arrayType, self.getVariableName(), '{'));
         # outputFile.write(string.join(map(lambda x: "    " + str(x.getRawValue()), self.values), ",\n"))
-        values = ["    " + str(x.getRawValue()) for x in self.values]
+        values = ["    " + str(x.getRawValue(componentRegister)) for x in self.values]
         outputFile.write(",\n".join(values))
         outputFile.write("\n};\n");
         outputFile.write("uint_t pattern_{0}Cursor = 0;\n".format(self.name));
@@ -604,27 +674,27 @@ class ConstStatement(object):
         return "const " + self.name + " " + self.value.getCode() + ';'
 
 ########################################################
-class SetStatement(object):
-    def __init__(self, name, expression):
-        self.name = name.lower()
-        self.expression = expression
-
-    def addComponents(self, componentRegister, conditionCollection):
-        self.conditionStack = list(conditionCollection.conditionStack)
-        self.branchNumber = conditionCollection.branchNumber
-        componentRegister.setState(self.name)
-
-    def finishAdding(self, componentRegister):
-        componentRegister.systemStates[self.name].addUseCase(
-            self.expression,
-            self.conditionStack,
-            self.branchNumber)
-
-    def getCode(self, indent):
-        return "set " + self.name + " " + self.expression.getCode() + ';'
-
-    def collectImplicitDefines(self):
-        return self.expression.collectImplicitDefines(None)
+#class SetStatement(object):
+#    def __init__(self, name, expression):
+#        self.name = name.lower()
+#        self.expression = expression
+#
+#    def addComponents(self, componentRegister, conditionCollection):
+#        self.conditionStack = list(conditionCollection.conditionStack)
+#        self.branchNumber = conditionCollection.branchNumber
+#        componentRegister.setState(self.name)
+#
+#    def finishAdding(self, componentRegister):
+#        componentRegister.systemStates[self.name].addUseCase(
+#            self.expression,
+#            self.conditionStack,
+#            self.branchNumber)
+#
+#    def getCode(self, indent):
+#        return "set " + self.name + " " + self.expression.getCode() + ';'
+#
+#    def collectImplicitDefines(self):
+#        return self.expression.collectImplicitDefines(None)
 
 ########################################################
 class NetworkReadStatement(object):
@@ -711,21 +781,21 @@ class ComponentDefineStatement(object):
         # print "ComponentDefineStatement", self.name, ": finishAdding"
         componentRegister.finishAddingVirtualComponent(self)
 
-    def getAllBasenamesRecursively(self, functionTree):
+    def getAllBasenamesRecursively(self, functionTree, componentRegister):
         if len(functionTree.arguments) == 0:
             # in this (default) case of 0-ary function, function name = sensor or constant name
             # TODO: replace CONST defines before this!
 #            print "  get basename functionTree.function:" ,functionTree.function
             if isinstance(functionTree.function, Value):
 #                print "    ", functionTree.function.getRawValue()
-                return ["__const" + str(functionTree.function.getRawValue())]
+                return ["__const" + str(functionTree.function.getRawValue(componentRegister))]
             if isinstance(functionTree.function, SealValue):
 #                print "    seal value", functionTree.function.firstPart
                 return [functionTree.function.firstPart]
             return [functionTree.function]
         basenames = []
         for a in functionTree.arguments:
-            basenames += self.getAllBasenamesRecursively(a)
+            basenames += self.getAllBasenamesRecursively(a, componentRegister)
         return basenames
 
     def fixBasenameRecursively(self, functionTree, old, new):
@@ -743,10 +813,10 @@ class ComponentDefineStatement(object):
     def fixBasename(self, old, new):
         self.functionTree = self.fixBasenameRecursively(self.functionTree, old, new)
 
-    def getAllBasenames(self):
+    def getAllBasenames(self, componentRegister):
 #        basenames = self.getAllBasenamesRecursively(self.functionTree)
 #        return map(lambda x: self.correctBasename(x), basenames)
-        return self.getAllBasenamesRecursively(self.functionTree)
+        return self.getAllBasenamesRecursively(self.functionTree, componentRegisteri)
 
     def getImmediateBasenameRecursively(self, functionTree):
         # no function
@@ -970,7 +1040,7 @@ class CodeBlock(object):
         # add implicitly declared virtual sensors
         implicitDefines = []
         for d in self.declarations:
-            if isinstance(d, ComponentUseCase) or isinstance(d, SetStatement):
+            if isinstance(d, ComponentUseCase): # or isinstance(d, SetStatement):
                 implicitDefines += d.collectImplicitDefines()
         self.declarations += implicitDefines
         # collect implicit defines from conditions too...
@@ -1007,8 +1077,8 @@ class CodeBlock(object):
                 d.addComponents(componentRegister, conditionCollection)
 
             if type(d) is ParametersDefineStatement \
-                    or type(d) is NetworkReadStatement \
-                    or type(d) is SetStatement:
+                    or type(d) is NetworkReadStatement:
+#                    or type(d) is SetStatement:
                 d.addComponents(componentRegister, conditionCollection)
 
             if type(d) is LoadStatement:
@@ -1046,9 +1116,9 @@ class CodeBlock(object):
             d.finishAdding(componentRegister)
 
         # add set statements (may depend on virtual components)
-        for d in self.declarations:
-            if type(d) is SetStatement:
-                d.finishAdding(componentRegister)
+#        for d in self.declarations:
+#            if type(d) is SetStatement:
+#                d.finishAdding(componentRegister)
 
         conditionCollection.nextBranch()
 

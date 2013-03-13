@@ -1,4 +1,8 @@
+// Read LED led status and tur on gren led if the red one is on
+
+use redled, initialTimeout 4s, on;
+
 read RedLed;
 when RedLed:
-  print, format "red LED is on!";
+  use greenLed, on;
 end

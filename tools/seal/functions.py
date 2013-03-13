@@ -351,7 +351,7 @@ def validateFunction(functionTree):
         # OK, argument expected and found. check its value.
         if f.constantOnly:
             for v in g:
-                if v.asConstant() is None:
+                if not v.isConstant():
                     return (False, "{} argument ('{}') of function {} is expected to be a constant!\n".format(
                         toTitleCase(orderNumToString(i)), f.name, fun.declaration()))
 

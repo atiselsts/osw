@@ -58,6 +58,8 @@ class SealComponent(object):
         self.times = SealParameter(None, ['1', '2', '3', '4', '5', '10', '20', '50', '100'])
         # read/use just for a time period?
         self.duration = SealParameter(None, ['100', '200', '500', '1000', '2000'])
+        # initial timeout
+        self.initialtimeout = SealParameter(None, ['100', '200', '500', '1000', '2000'])
         self.useFunction = SealAdvancedParameter(None)   # each usable component must define this
         self.readFunction = SealAdvancedParameter(None)  # each readable component must define this
         self.aliases["time"] = "duration"
