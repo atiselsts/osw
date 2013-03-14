@@ -133,7 +133,6 @@
             pinRead(po, pi)                     \
     })
 
-
 // include the platform-specific header
 #include "gpio_hal.h"
 

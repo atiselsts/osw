@@ -107,6 +107,12 @@
 #define OPORTK PORTK
 #define OPORTL PORTL
 
+// simbolic port defines for Atmega
+#define A 1
+#define B 2
+#define C 3
+#define D 4
+
 // set bit to 1 for output and 0 for input
 #define PORT_AS_OUTPUT(portnum)  PORT##portnum##DIR = 0xff;
 #define PORT_AS_INPUT(portnum)   PORT##portnum##DIR = 0x00;

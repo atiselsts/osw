@@ -23,6 +23,7 @@
 TYPE_ACTUATOR = 1
 TYPE_SENSOR = 2
 TYPE_OUTPUT = 3
+TYPE_INTERNAL = 4
 
 components = []
 
@@ -429,6 +430,44 @@ class DigitalInputSensor(SealSensor):
         if port is None: port = 1
         if pin is None: pin = 0
         return "pinRead({}, {})".format(port, pin)
+
+############################################################
+class SealInternalComponent(SealComponent):
+    def __init__(self, name):
+        super(SealInternalComponent, self).__init__(TYPE_INTERNAL, name)
+
+# internal
+class DoBranchStatus(SealInternalComponent):
+    def __init__(self):
+        super(DoBranchStatus, self).__init__("__DoBranchStatus")
+        self.useFunction.value = "doThenBranchStatus[0] = 0"
+        self.readFunction.value = "doThenBranchStatus[0] = 0"
+        self.branchnumber = SealParameter(1, ["0", "1", "2", "3", "4", "5", "6", "7"])
+#        self._readFunctionDependsOnParams = True
+
+#    def calculateParameterValue(self, parameter, useCaseParameters):
+#        # print "calculateParameterValue: ", parameter
+#        if parameter != "readFunction" and parameter != "useFunction":
+#            return SealSensor.calculateParameterValue(self, parameter, useCaseParameters)
+#        branchNumber = self.getParameterValue("branchnumber", useCaseParameters)
+#        if branchNumber is None: branchNumber = 1
+#        return "doThenBranchStatus[{}] = 0".format(branchNumber - 1)
+
+class ThenBranchStatus(SealInternalComponent):
+    def __init__(self):
+        super(ThenBranchStatus, self).__init__("__ThenBranchStatus")
+        self.useFunction.value = "doThenBranchStatus[0] = 0"
+        self.readFunction.value = "doThenBranchStatus[0] = 0"
+        self.branchnumber = SealParameter(1, ["0", "1", "2", "3", "4", "5", "6", "7"])
+#        self._readFunctionDependsOnParams = True
+
+#    def calculateParameterValue(self, parameter, useCaseParameters):
+#        # print "calculateParameterValue: ", parameter
+#        if parameter != "readFunction" and parameter != "useFunction":
+#            return SealSensor.calculateParameterValue(self, parameter, useCaseParameters)
+#        branchNumber = self.getParameterValue("branchnumber", useCaseParameters)
+#        if branchNumber is None: branchNumber = 1
+#        return "++doThenBranchStatus[{}]".format(branchNumber - 1)
 
 #######################################################
 class SealActuator(SealComponent):

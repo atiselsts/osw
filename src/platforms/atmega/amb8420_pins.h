@@ -31,8 +31,6 @@
 
 #define AMB8420_SERIAL_BAUDRATE  9600
 
-#define D 3
-
 // when low: restart the module
 #define AMB8420_RESET_PORT  D
 #define AMB8420_RESET_PIN   3

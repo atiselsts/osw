@@ -131,6 +131,8 @@ class Generator(object):
             a.generateCallbacks(self.outputFile, self.outputs)
         for o in components.componentRegister.outputs.values():
             o.generateCallbacks(self.outputFile, self.outputs)
+        for i in components.componentRegister.internalComponents.values():
+            i.generateCallbacks(self.outputFile, self.outputs)
 
         for n in self.networkComponents:
             n.generateReadFunctions(self.outputFile)
@@ -175,7 +177,7 @@ class Generator(object):
         self.outputFile.write("    branch0Start();\n")
         for br in range(1, components.componentRegister.branchCollection.getNumBranches()):
             self.outputFile.write("    newBranchStatus = branch{}Evaluate();\n".format(br))
-            self.outputFile.write("    if (newBranchStatus) {\n")
+            self.outputFile.write("    if (newBranchStatus && !branchStatus[{}]) {}\n".format(br, '{'))
             self.outputFile.write("        branchStatus[{}] = true;\n".format(br))
             self.outputFile.write("        branch{}Start();\n".format(br))
             self.outputFile.write("    }\n")

@@ -54,6 +54,8 @@ class SealParser():
         if self.verboseMode:
             print (s)
         if s == None: return
+#        self.doThenBranchNumber = 0
+#        self.doThenSubBranchNumber = 0
         # reset global variables
         components.clearGlobals()
         # Redirect user errors to parent print function
@@ -85,7 +87,9 @@ class SealParser():
       "else": "ELSE_TOKEN",
       "elsewhen": "ELSEWHEN_TOKEN",
       "end": "END_TOKEN",
-      "parameters": "PARAMETERS_TOKEN",
+      "do": "DO_TOKEN",
+      "then": "THEN_TOKEN",
+#      "parameters": "PARAMETERS_TOKEN",
       "define": "DEFINE_TOKEN",
       "config": "CONFIG_TOKEN",
       "const": "CONST_TOKEN",
@@ -158,7 +162,6 @@ class SealParser():
                     continue
                 parsingPrefix = False
                 suffix = c.lower()
-#                prefix = ''
             else:
                 if c >= '0' and c <= '9':
                     prefixList.append(prefix)
@@ -169,10 +172,8 @@ class SealParser():
                     continue
                 suffix += c.lower()
 
-
         prefixList.append(prefix)
         suffixList.append(suffix)
-
         lst = zip(prefixList, suffixList)
 
         if isTimeValue(suffixList[-1]):
@@ -236,16 +237,17 @@ class SealParser():
         '''declaration : component_use_case
                        | network_read_statement
                        | when_block
+                       | do_block
                        | system_config
                        | pattern_declaration
                        | const_statement 
                        | define_statement
-                       | parameters_statement
                        | load_statement
                        | ';'
                        | error END_TOKEN
                        | error ';'
         '''
+#                       | parameters_statement
         # use case, when block, parameter, other statements, or empty statement
         if len(p) == 2:
             p[0] = p[1]
@@ -332,7 +334,7 @@ class SealParser():
     def p_argument_list(self, p):
         '''argument_list : functional_expression ',' argument_list
                          | functional_expression
-        '''
+                         '''
         if len(p) == 4: p[0] = p[3]
         else: p[0] = []
         p[0].append(p[1])
@@ -359,10 +361,10 @@ class SealParser():
         if len(p) == 2: p[0] = (p[1], 1)
         else: p[0] = (p[1], p[2].value)
 
-    def p_parameters_statement(self, p):
-        '''parameters_statement : PARAMETERS_TOKEN IDENTIFIER_TOKEN parameter_list ';'
-        '''
-        p[0] = ParametersDefineStatement(p[2], p[3])
+#    def p_parameters_statement(self, p):
+#        '''parameters_statement : PARAMETERS_TOKEN IDENTIFIER_TOKEN parameter_list ';'
+#        '''
+#        p[0] = ParametersDefineStatement(p[2], p[3])
 
     def p_when_block(self, p):
         '''when_block : WHEN_TOKEN condition ':' declaration_list elsewhen_block END_TOKEN
@@ -382,6 +384,45 @@ class SealParser():
         else:             # elsewhen block
             p[0] = CodeBlock(CODE_BLOCK_TYPE_ELSEWHEN, p[2], p[4], p[5])
 
+    def p_do_block(self, p):
+        '''do_block : DO_TOKEN parameter_list ':' declaration_list then_block END_TOKEN
+        '''
+#        self.doThenBranchNumber += 1
+#        branchName = "doThenBranch" + str(self.doThenBranchNumber)
+        # status == 0
+#        self.doThenSubBranchNumber = 0
+#        condition = Expression(Expression(right = Value(branchName + "Status")),
+#                               '=',
+#                               Expression(right = Value(0)))
+#        p[0] = CodeBlock(CODE_BLOCK_TYPE_DO, condition, p[4], p[5])
+#        p[0].doThenBranchNumber = self.doThenBranchNumber
+#        p[0].doThenSubBranchNumber = 0
+        p[0] = CodeBlock(CODE_BLOCK_TYPE_DO, None, p[4], p[5])
+#        params = ParametersDefineStatement(None, p[2])
+        p[0].parameters = p[2]
+
+    def p_then_block(self, p):
+        '''then_block : THEN_TOKEN parameter_list ':' declaration_list then_block
+                      | empty
+        '''
+        if len(p) == 2:   # empty
+            p[0] = None
+        else:
+#            branchName = "doThenBranch" + str(self.doThenBranchNumber)
+#            # status == <number>
+#            self.doThenSubBranchNumber += 1   # TODO: check if the branch ordering does not need to be reverted!
+#            condition = Expression(Expression(right = Value(branchName + "Status")),
+#                               '=',
+#                               Expression(right = Value(self.doThenSubBranchNumber)))
+#            p[0] = CodeBlock(CODE_BLOCK_TYPE_THEN, condition, p[4], p[5])
+            p[0] = CodeBlock(CODE_BLOCK_TYPE_THEN, None, p[4], p[5])
+#            p[0].doThenBranchNumber = self.doThenBranchNumber
+#            p[0].doThenSubBranchNumber = self.doThenSubBranchNumber
+
+#            params = ParametersDefineStatement(branchName + "Params" + str(self.doThenSubBranchNumber), p[2])
+#            params = ParametersDefineStatement(None, p[2])
+            p[0].parameters = p[2]
+
     def p_condition(self, p):
         '''condition : condition_term
                      | condition OR_TOKEN condition_term
@@ -391,7 +432,6 @@ class SealParser():
                      | NOT_TOKEN condition_factor
         '''
         if len(p) == 2: # logical_statement
-#            p[0] = p[1]
             p[0] = Expression(right=p[1])
         elif len(p) == 3: # NOT condition
             p[0] = Expression(None, p[1], p[2])
@@ -431,8 +471,8 @@ class SealParser():
                      | IDENTIFIER_TOKEN value
                      | PATTERN_TOKEN value
                      | WHERE_TOKEN condition
-                     | PARAMETERS_TOKEN IDENTIFIER_TOKEN
         '''
+#                     | PARAMETERS_TOKEN IDENTIFIER_TOKEN
         if len(p) == 2:
             p[0] = (p[1], None)
         else:

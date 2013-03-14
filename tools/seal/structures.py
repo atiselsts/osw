@@ -75,8 +75,9 @@ def suffixTransform(value, suffix, componentRegister):
             # for TSR sensor
             return int(value / 0.4693603515625)
         if componentRegister.architecture == "sm3":
-            # this should work on both ISL and SQ 1xx light sensors
-            return value # TODO
+            # this should work on the ISL light sensor
+            # TODO: SQ 1xx
+            return value * 65536 / 62272
         print("Luxes not handled correctly on architecture {1} at the moment\n".format(
                 componentRegister.architecture))
         return value
@@ -110,6 +111,12 @@ def convertTimeValue(array):
 
     # always use milliseconds in the end
     return zip([result], ['ms'])
+
+def findParameter(paramName, parametersList):
+    for (name, value) in parametersList:
+        if name == paramName:
+            return value
+    return None
 
 def toCamelCase(s):
     if s == '': return ''
@@ -272,7 +279,7 @@ class ConditionCollection(object):
         # for optimization, should return as soon as isFilteredOut becomes true.
         condition = self.conditionList[i]
         condition.id = i + 1
-        return "    int8_t result = (bool)" + condition.getEvaluationCode(componentRegister)
+        return "    int8_t result = (bool)(" + condition.getEvaluationCode(componentRegister) + ");\n"
 
     def generateCode(self, componentRegister):
         for i in range(len(self.conditionList)):
@@ -345,10 +352,10 @@ class ConditionCollection(object):
         for c in self.conditionList:
             self.generateLocalFunctionsForCondition(c, outputFile)
 
-    def onSensorRead(self, outputFile, sensorName):
+    def onSensorRead(self, outputFile, sensorName, indent = "    "):
         for c in self.conditionList:
             if sensorName in c.dependentOnPeriodicSensors:
-                outputFile.write("        condition{}Callback();\n".format(c.id))
+                outputFile.write(indent + "condition{}Callback();\n".format(c.id))
 
     def generateAppMainCodeForCondition(self, condition, outputFile):
         for code in condition.dependentOnRemoteSensors:
@@ -594,7 +601,7 @@ class Expression(object):
         code = self.getCodeForGenerator(componentRegister, self, None)
         return code.replace(" and ", "\n        && ")\
             .replace(" or ", "\n        || ")\
-            .replace("(not ", "(! ") + ";\n"
+            .replace("(not ", "(! ")
 
     def asString(self):
         temp = self.getCode().split(" ", 1)
@@ -855,30 +862,30 @@ class ComponentDefineStatement(object):
 
 
 ########################################################
-class ParametersDefineStatement(object):
-    def __init__(self, name, parameters):
-        self.name = name.lower()
-        self.parameters = parameters
-
-    def getCode(self, indent):
-        result = "parameters " + self.name
-        for p in self.parameters:
-            result += " "
-            result += p[0]
-            if p[1] != None:
-                result += " "
-                result += p[1].getCode()
-            result += ","
-        if self.parameters != []:
-            result = result[:-1] # remove last comma
-        result += ';'
-        return result
-
-    def addComponents(self, componentRegister, conditionCollection):
-        if self.name in componentRegister.parameterDefines:
-            componentRegister.userError("Parameter define {0} already specified, ignoring\n".format(self.name))
-            return
-        componentRegister.parameterDefines[self.name] = self
+#class ParametersDefineStatement(object):
+#    def __init__(self, name, parameters):
+#        self.name = name.lower() if name else None
+#        self.parameters = parameters
+#
+#    def getCode(self, indent):
+#        result = "parameters " + self.name
+#        for p in self.parameters:
+#            result += " "
+#            result += p[0]
+#            if p[1] != None:
+#                result += " "
+#                result += p[1].getCode()
+#            result += ","
+#        if self.parameters != []:
+#            result = result[:-1] # remove last comma
+#        result += ';'
+#        return result
+#
+#    def addComponents(self, componentRegister, conditionCollection):
+#        if self.name in componentRegister.parameterDefines:
+#            componentRegister.userError("Parameter define {0} already specified, ignoring\n".format(self.name))
+#            return
+#        componentRegister.parameterDefines[self.name] = self
 
 ########################################################
 class LoadStatement(object):
@@ -944,9 +951,9 @@ class ComponentUseCase(object):
     def addUseCase(self, componentRegister, conditionCollection):
         self.componentUseCase = \
             componentRegister.useComponent(self.type, self.name,
-                                       self.parameters, self.fields,
-                                       conditionCollection.conditionStack,
-                                       conditionCollection.branchNumber)
+                                           self.parameters, self.fields,
+                                           conditionCollection.conditionStack,
+                                           conditionCollection.branchNumber)
 
     def collectImplicitDefines(self):
         implicitDefines = []
@@ -962,8 +969,14 @@ CODE_BLOCK_TYPE_PROGRAM = 0
 CODE_BLOCK_TYPE_WHEN = 1
 CODE_BLOCK_TYPE_ELSEWHEN = 2
 CODE_BLOCK_TYPE_ELSE = 3
+CODE_BLOCK_TYPE_DO = 4
+CODE_BLOCK_TYPE_THEN = 5
 
 class CodeBlock(object):
+    currentDoThenBranch = 0
+    currentDoThenSubBranch = 0
+
+    #######################################################
     def __init__(self, blockType, condition, declarations, nextBlock):
         self.blockType = blockType
         self.condition = condition
@@ -971,54 +984,66 @@ class CodeBlock(object):
         self.componentDefines = {}
         self.nextBlock = nextBlock
 
-    def getCode(self, indent):
-        result = getIndent(indent)
-        if self.blockType == CODE_BLOCK_TYPE_WHEN:
-            result += "when"
-            result += " " + self.condition.getCode()
-            result += ":\n"
-            indent += 1
-        elif self.blockType == CODE_BLOCK_TYPE_ELSEWHEN:
-            result += "elsewhen"
-            result += " " + self.condition.getCode()
-            result += ":\n"
-            indent += 1
-        elif self.blockType == CODE_BLOCK_TYPE_ELSE:
-            result += "else:\n"
-            indent += 1
+        # for "do ... then .. end" blocks
+        self.doThenBranchNumber = 0
+        self.doThenSubBranchNumber = 0
+        self.parameters = None
+        self.branchNumber = 0
+        self.branchStartComponentUC = None
 
-        for d in self.declarations:
-            # IDE -> unfinished condition '1<'
-            if d == None:
-                continue
-            result += getIndent(indent)
-            result += d.getCode(indent)
-            result += "\n"
-        # recursive call
-        if self.nextBlock != None:
-            assert indent > 0
-            indent -= 1
-            result += getIndent(indent)
-            result += self.nextBlock.getCode(indent)
-            result += "\n"
-        elif self.blockType != CODE_BLOCK_TYPE_PROGRAM:
-            result += "end\n"
+#    def getCode(self, indent):
+#       result = getIndent(indent)
+#        if self.blockType == CODE_BLOCK_TYPE_WHEN:
+#            result += "when"
+#            result += " " + self.condition.getCode()
+#            result += ":\n"
+#            indent += 1
+#        elif self.blockType == CODE_BLOCK_TYPE_ELSEWHEN:
+#            result += "elsewhen"
+#            result += " " + self.condition.getCode()
+#            result += ":\n"
+#            indent += 1
+#        elif self.blockType == CODE_BLOCK_TYPE_ELSE:
+#            result += "else:\n"
+#            indent += 1
 
-        return result
+#        for d in self.declarations:
+#            # IDE -> unfinished condition '1<'
+#            if d == None:
+#                continue
+#            result += getIndent(indent)
+#            result += d.getCode(indent)
+#            result += "\n"
+#        # recursive call
+#        if self.nextBlock != None:
+#            assert indent > 0
+#            indent -= 1
+#            result += getIndent(indent)
+#            result += self.nextBlock.getCode(indent)
+#            result += "\n"
+#        elif self.blockType != CODE_BLOCK_TYPE_PROGRAM:
+#            result += "end\n"
+#
+#        return result
 
+    #######################################################
     def enterCodeBlock(self, componentRegister, conditionCollection):
         stackStartSize = conditionCollection.size()
         if self.blockType == CODE_BLOCK_TYPE_PROGRAM:
             # reset all
             conditionCollection.reset()
-        elif self.blockType == CODE_BLOCK_TYPE_WHEN:
+        elif self.blockType == CODE_BLOCK_TYPE_WHEN or self.blockType == CODE_BLOCK_TYPE_DO:
             # append new
+            assert self.condition
             conditionCollection.add(self.condition)
-        elif self.blockType == CODE_BLOCK_TYPE_ELSEWHEN:
+            # TODO: for DO blocks add special use case that sets doThenBranchNStatus variable
+        elif self.blockType == CODE_BLOCK_TYPE_ELSEWHEN or self.blockType == CODE_BLOCK_TYPE_THEN:
             # invert previous...
             conditionCollection.invertLast()
             # ..and append new
+            assert self.condition
             conditionCollection.add(self.condition)
+            # TODO: for DO blocks add special use case that increments doThenBranchNStatus variable
         elif self.blockType == CODE_BLOCK_TYPE_ELSE:
             # just invert previous
             conditionCollection.invertLast()
@@ -1028,14 +1053,95 @@ class CodeBlock(object):
 
         return stackStartSize
 
+    #######################################################
     def exitCodeBlock(self, componentRegister, conditionCollection, stackStartSize):
-        if self.blockType == CODE_BLOCK_TYPE_WHEN:
+        if self.blockType == CODE_BLOCK_TYPE_WHEN or self.blockType == CODE_BLOCK_TYPE_DO:
             # pop all conditions from this code block
             conditionCollection.pop(conditionCollection.size() - stackStartSize)
 
+    #######################################################
+    def applyImplicitPeriodRecursively(self, periodParamValue):
+        if self.blockType == CODE_BLOCK_TYPE_DO \
+                or self.blockType == CODE_BLOCK_TYPE_THEN:
+            if findParameter("period", self.parameters) is not None:
+                # has its own "period" specified, stop right here
+                return
 
-    def addComponents(self, componentRegister, conditionCollection):
+        for d in self.declarations:
+            if type(d) is ComponentUseCase:
+                if "period" not in d.parameters:
+                    d.parameters["period"] = periodParamValue
+            if type(d) is CodeBlock:
+                d.applyImplicitPeriodRecursively(periodParamValue)
+
+        if self.nextBlock != None:
+            self.nextBlock.applyImplicitPeriodRecursively(periodParamValue)
+
+    #######################################################
+    def setupDoThenBranchConditions(self, parent, componentRegister, conditionCollection):
+        if self.blockType == CODE_BLOCK_TYPE_PROGRAM:
+            # reset all
+            CodeBlock.currentDoThenBranch = 0
+
+        elif self.blockType == CODE_BLOCK_TYPE_DO:
+            CodeBlock.currentDoThenBranch += 1
+            self.doThenBranchNumber = CodeBlock.currentDoThenBranch
+            self.currentDoThenSubBranch = 0
+            branchName = "doThenBranchStatus[" + str(self.doThenBranchNumber - 1) + "]"
+
+            param = ("branchNumber", Value(self.doThenBranchNumber))
+            self.parameters.append(param)
+
+            # add a component to parents branch that is going to
+            self.branchStartComponentUC = \
+                componentRegister.useComponent("use", "__dobranchstatus",
+                                               dict(self.parameters), [],
+                                               conditionCollection.conditionStack,
+                                               parent.branchNumber)
+
+            self.condition = Expression(Expression(right = Value(branchName)),
+                                        '=',
+                                        Expression(right = Value(0)))
+            self.condition.dependentOnPeriodicSensors.add("__dobranchstatus")
+
+        elif self.blockType == CODE_BLOCK_TYPE_THEN:
+            self.doThenBranchNumber = CodeBlock.currentDoThenBranch
+            CodeBlock.currentDoThenSubBranch += 1
+            self.doThenSubBranchNumber = CodeBlock.currentDoThenSubBranch
+            branchName = "doThenBranchStatus[" + str(self.doThenBranchNumber - 1) + "]"
+
+            param = ("branchNumber", Value(self.doThenBranchNumber))
+            self.parameters.append(param)
+
+            self.branchStartComponentUC = \
+                componentRegister.useComponent("use", "__thenbranchstatus",
+                                               dict(self.parameters), [],
+                                               conditionCollection.conditionStack,
+                                               parent.branchNumber)
+            # link them together
+            parent.branchStartComponentUC.nextComponentUC = self.branchStartComponentUC
+
+            self.condition = Expression(Expression(right = Value(branchName)),
+                                        '=',
+                                        Expression(right = Value(self.doThenSubBranchNumber)))
+            self.condition.dependentOnPeriodicSensors.add("__thenbranchstatus")
+
+    #######################################################
+    def setupDoThenBranchParameters(self):
+        if self.blockType == CODE_BLOCK_TYPE_DO \
+                or self.blockType == CODE_BLOCK_TYPE_THEN:
+            # add "period" (but not other parameters) value to all sub-declarations!
+            # TODO: allow "inherit" keyword that causes ALL params to be inherited?
+            periodParam = findParameter("period", self.parameters)
+            if periodParam:
+                self.applyImplicitPeriodRecursively(periodParam)
+
+    ##########################################################################
+    def addComponents(self, parent, componentRegister, conditionCollection):
+        self.setupDoThenBranchConditions(parent, componentRegister, conditionCollection)
         ss = self.enterCodeBlock(componentRegister, conditionCollection)
+        self.setupDoThenBranchParameters()
+        self.branchNumber = conditionCollection.branchNumber
 
         # add implicitly declared virtual sensors
         implicitDefines = []
@@ -1051,13 +1157,13 @@ class CodeBlock(object):
         for d in self.declarations:
             if type(d) is SystemParameter:
                 if self.blockType != CODE_BLOCK_TYPE_PROGRAM:
-                    componentRegister.userError("System configuration supported only in top level, ignoring '{0}'\n".format(
+                    componentRegister.userError("System configuration supported only at the top level, ignoring '{0}'\n".format(
                             d.getConfigLine()))
                 else:
                     d.addComponents(componentRegister, conditionCollection)
             if type(d) is PatternDeclaration:
                 if self.blockType != CODE_BLOCK_TYPE_PROGRAM:
-                    componentRegister.userError("Pattern declarations supported only in top level, ignoring pattern '{0}'\n".format(
+                    componentRegister.userError("Pattern declarations supported only at the top level, ignoring pattern '{0}'\n".format(
                             d.name))
                 else:
                     d.addComponents(componentRegister, conditionCollection)
@@ -1076,14 +1182,14 @@ class CodeBlock(object):
                 d.containingCodeBlock = self
                 d.addComponents(componentRegister, conditionCollection)
 
-            if type(d) is ParametersDefineStatement \
-                    or type(d) is NetworkReadStatement:
+#            if type(d) is ParametersDefineStatement \
+#                    or type(d) is NetworkReadStatement:
 #                    or type(d) is SetStatement:
-                d.addComponents(componentRegister, conditionCollection)
+#                d.addComponents(componentRegister, conditionCollection)
 
             if type(d) is LoadStatement:
                 if self.blockType != CODE_BLOCK_TYPE_PROGRAM:
-                    componentRegister.userError("Load statements supported only in top level, ignoring '{0}'\n".format(
+                    componentRegister.userError("Load statements supported only at the top level, ignoring '{0}'\n".format(
                             d.getConfigLine()))
                 else:
                     d.load(componentRegister)
@@ -1098,15 +1204,19 @@ class CodeBlock(object):
         # recursive call (for included "when" statements)
         for d in self.declarations:
             if type(d) is CodeBlock:
-                d.addComponents(componentRegister, conditionCollection)
+                d.addComponents(self, componentRegister, conditionCollection)
 
         # recursive call (for next "elsewhen" or "else" branch)
         if self.nextBlock != None:
-            self.nextBlock.addComponents(componentRegister, conditionCollection)
+            self.nextBlock.addComponents(self, componentRegister, conditionCollection)
+
+        if componentRegister.numDoBranches < self.doThenBranchNumber:
+            componentRegister.numDoBranches = self.doThenBranchNumber
 
         self.exitCodeBlock(componentRegister, conditionCollection, ss)
 
 
+    #######################################################
     def addVirtualComponents(self, componentRegister, conditionCollection):
         ss = self.enterCodeBlock(componentRegister, conditionCollection)
 
@@ -1134,6 +1244,7 @@ class CodeBlock(object):
         self.exitCodeBlock(componentRegister, conditionCollection, ss)
 
 
+    #######################################################
     def addUseCases(self, componentRegister, conditionCollection):
         ss = self.enterCodeBlock(componentRegister, conditionCollection)
 
@@ -1155,9 +1266,9 @@ class CodeBlock(object):
 
         self.exitCodeBlock(componentRegister, conditionCollection, ss)
 
-
+    #######################################################
     def add(self, componentRegister, conditionCollection):
-        self.addComponents(componentRegister, conditionCollection)
+        self.addComponents(None, componentRegister, conditionCollection)
         componentRegister.chainVirtualComponents()
         self.addVirtualComponents(componentRegister, conditionCollection)
         self.addUseCases(componentRegister, conditionCollection)

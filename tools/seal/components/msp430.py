@@ -57,15 +57,17 @@ systime = SystemTimeSensor()
 timestamp = TimestampSensor()
 uptime = UptimeSensor()
 
-# comment out for now: the work, but are not appropriate for beginners
+# comment out for now: they work, but are not appropriate for beginners
 #squarewave = SquareWaveSensor()
 #trianglewave = TriangleWaveSensor()
 #sawwave = SawtoothWaveSensor()
 #sinewave = SineWaveSensor()
 
 variables = VariableSensor()
-constants = ConstantsSensor()
+constants = ConstantsSensor() # do not confuse with ConstantSensor!
 
+dbr = DoBranchStatus()
+tbr = ThenBranchStatus()
 
 #
 # Tmote-specific components
