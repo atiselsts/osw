@@ -81,7 +81,7 @@ class SealParser():
     reserved = {
       "use": "USE_TOKEN",
       "read": "READ_TOKEN",
-      "networkread": "NETWORK_READ_TOKEN",
+#      "networkread": "NETWORK_READ_TOKEN",
       "output": "OUTPUT_TOKEN",
       "when": "WHEN_TOKEN",
       "else": "ELSE_TOKEN",
@@ -235,7 +235,6 @@ class SealParser():
 
     def p_declaration(self, p):
         '''declaration : component_use_case
-                       | network_read_statement
                        | when_block
                        | do_block
                        | system_config
@@ -247,6 +246,7 @@ class SealParser():
                        | error END_TOKEN
                        | error ';'
         '''
+#                       | network_read_statement
 #                       | parameters_statement
         # use case, when block, parameter, other statements, or empty statement
         if len(p) == 2:
@@ -267,10 +267,10 @@ class SealParser():
             p[0] = ComponentUseCase(p[1], p[2], p[4], p[3])
         self.lineTracking["Statement"].append((p.lineno(1), p.lineno(4), p[0]))
 
-    def p_network_read_statement(self, p):
-        '''network_read_statement : NETWORK_READ_TOKEN IDENTIFIER_TOKEN output_fields ';'
-        '''
-        p[0] = NetworkReadStatement(p[2], p[3])
+#    def p_network_read_statement(self, p):
+#        '''network_read_statement : NETWORK_READ_TOKEN IDENTIFIER_TOKEN output_fields ';'
+#        '''
+#        p[0] = NetworkReadStatement(p[2], p[3])
 
     def p_system_config(self, p):
         '''system_config : CONFIG_TOKEN value ';'

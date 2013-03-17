@@ -85,16 +85,16 @@ class Generator(object):
             # self.outputFile.write("\n")
 
     def definePacketTypes(self):
-        for n in self.networkComponents:
-            n.sortFields()
+#        for n in self.networkComponents:
+#            n.sortFields()
         for o in self.outputs:
             o.definePacketType()
 
     def generateTypes(self):
         for o in self.outputs:
             o.generatePacketType(self.outputFile)
-        for n in self.networkComponents:
-            n.generatePacketType(self.outputFile)
+#        for n in self.networkComponents:
+#            n.generatePacketType(self.outputFile)
 
     def generateVariables(self):
         self.outputFile.write("int8_t conditionStatus[NUM_CONDITIONS] = {\n")
@@ -105,8 +105,8 @@ class Generator(object):
         components.componentRegister.generateVariables(self.outputFile)
         for c in self.components:
             c.generateVariables(self.outputFile)
-        for n in self.networkComponents:
-            n.generateVariables(self.outputFile)
+#        for n in self.networkComponents:
+#            n.generateVariables(self.outputFile)
 
     def generateLocalFunctions(self):
         for c in self.components:
@@ -134,8 +134,8 @@ class Generator(object):
         for i in components.componentRegister.internalComponents.values():
             i.generateCallbacks(self.outputFile, self.outputs)
 
-        for n in self.networkComponents:
-            n.generateReadFunctions(self.outputFile)
+#        for n in self.networkComponents:
+#            n.generateReadFunctions(self.outputFile)
 
     def generateConditions(self):
         # branch evaluation functions
@@ -235,17 +235,14 @@ class Generator(object):
 
         # generate condition code now, for later use
         components.conditionCollection.generateCode(components.componentRegister)
-        # find out the sensors that should be cached
-        components.componentRegister.markCachedSensors()
-        # find out the sensors that should synched
-        components.componentRegister.markSyncSensors()
+        # find out the sensors that should be cached, synched etc.
+        components.componentRegister.markSensors()
 
         self.components = components.componentRegister.getAllComponents()
         self.outputs = []
         for c in self.components:
             if type(c) is components.Output and len(c.useCases):
                 self.outputs.append(c)
-        self.networkComponents = components.componentRegister.networkComponents.values()
         # generate packet types now, for later use
         self.definePacketTypes()
 

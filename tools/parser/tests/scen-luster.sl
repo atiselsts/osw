@@ -8,7 +8,7 @@
 const DATA_QUERY_COMMAND 1;
 
 // remote light packet
-read RemoteLight; read RemoteAddress, read RemoteTimestamp;
+read RemoteLight; read RemoteAddress; read RemoteTimestamp;
 Output File (RemoteLight, RemoteAddress, RemoteTimestamp), filename "LightData.bin";
 
 // storage query packet

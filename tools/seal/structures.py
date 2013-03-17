@@ -288,8 +288,8 @@ class ConditionCollection(object):
     def writeOutCodeForEventBasedCondition(self, condition, outputFile, branchCollection):
         if condition.dependentOnPeriodicSensors or condition.dependentOnStates:
             outputFile.write("static void condition{0}Callback(void)\n".format(condition.id))
-        elif condition.dependentOnRemoteSensors:
-            outputFile.write("static void condition{0}Callback(uint16_t code, int32_t value)\n".format(condition.id))
+#        elif condition.dependentOnRemoteSensors:
+#            outputFile.write("static void condition{0}Callback(uint16_t code, int32_t value)\n".format(condition.id))
         elif condition.dependentOnInterrupts:
             outputFile.write("static void condition{0}Callback(void)\n".format(condition.id))
         else:
@@ -339,8 +339,8 @@ class ConditionCollection(object):
     def generateLocalFunctionsForCondition(self, condition, outputFile):
         if condition.dependentOnPeriodicSensors or condition.dependentOnStates:
             outputFile.write("static void condition{0}Callback(void);\n".format(condition.id))
-        elif condition.dependentOnRemoteSensors:
-            outputFile.write("static void condition{0}Callback(uint16_t code, int32_t value);\n".format(condition.id))
+#        elif condition.dependentOnRemoteSensors:
+#            outputFile.write("static void condition{0}Callback(uint16_t code, int32_t value);\n".format(condition.id))
         elif condition.dependentOnInterrupts:
             outputFile.write("static void condition{0}Callback(void);\n".format(condition.id))
         elif condition.dependentOnPackets:
@@ -358,9 +358,9 @@ class ConditionCollection(object):
                 outputFile.write(indent + "condition{}Callback();\n".format(c.id))
 
     def generateAppMainCodeForCondition(self, condition, outputFile):
-        for code in condition.dependentOnRemoteSensors:
-            outputFile.write("    sealNetRegisterInterest({}, condition{}Callback);\n".format(
-                    code, condition.id))
+#        for code in condition.dependentOnRemoteSensors:
+#            outputFile.write("    sealNetRegisterInterest({}, condition{}Callback);\n".format(
+#                    code, condition.id))
 
         for component in condition.dependentOnPackets:
             outputFile.write("    {\n")
@@ -372,8 +372,8 @@ class ConditionCollection(object):
                     condition.id, component.name))
             outputFile.write("    }\n")
 
+#                and not condition.dependentOnRemoteSensors
         if not condition.dependentOnPeriodicSensors \
-                and not condition.dependentOnRemoteSensors \
                 and not condition.dependentOnInterrupts \
                 and not condition.dependentOnPackets:
             # a static (constant or state-based) condition.
@@ -440,7 +440,8 @@ class Value(object):
         # print " Value", self.value
         if isinstance(self.value, SealValue):
             return self.value.getCodeForGenerator(componentRegister, condition, inParameter)
-        return str(self.getRawValue(componentRegister))
+        rawValue = self.getRawValue(componentRegister)
+        return str(rawValue) if rawValue is not None else None
 
     def getType(self):
         if typeIsString(self.value):
@@ -530,7 +531,7 @@ class Expression(object):
         # dependent on these periodic sensors
         self.dependentOnPeriodicSensors = set()
         # dependent on these self-reading sensors (e.g. remote, GPS?, etc.)
-        self.dependentOnRemoteSensors = set()
+#        self.dependentOnRemoteSensors = set()
         # dependent on these interrupts sensors
         self.dependentOnInterrupts = set()
         # dependent on these states
@@ -543,9 +544,9 @@ class Expression(object):
     def isEventBased(self):
         return bool(len(self.dependentOnPeriodicSensors)) \
             or bool(len(self.dependentOnStates)) \
-            or bool(len(self.dependentOnRemoteSensors)) \
             or bool(len(self.dependentOnInterrupts)) \
             or bool(len(self.dependentOnPackets))
+#            or bool(len(self.dependentOnRemoteSensors))
 
     def collectImplicitDefines(self, containingComponent):
         result = []
@@ -704,31 +705,31 @@ class ConstStatement(object):
 #        return self.expression.collectImplicitDefines(None)
 
 ########################################################
-class NetworkReadStatement(object):
-    def __init__(self, name, fields):
-        self.name = name.lower()
-        self.fields = []
-        # f[0] - name, f[1] - count (integer)
-        for f in fields:
-            if f[1] != 1:
-                componentRegister.userError("Field '{}' specified multiple times in NetworkRead '{}'\n".format(f[0], name))
-            self.fields.append(f[0].lower())
+#class NetworkReadStatement(object):
+#    def __init__(self, name, fields):
+#        self.name = name.lower()
+#        self.fields = []
+#        # f[0] - name, f[1] - count (integer)
+#        for f in fields:
+#            if f[1] != 1:
+#                componentRegister.userError("Field '{}' specified multiple times in NetworkRead '{}'\n".format(f[0], name))
+#            self.fields.append(f[0].lower())
 
-    def addComponents(self, componentRegister, conditionCollection):
-        componentRegister.addNetworkComponent(self.name, self.fields,
-                                              conditionCollection.conditionStack,
-                                              conditionCollection.branchNumber)
+#    def addComponents(self, componentRegister, conditionCollection):
+#        componentRegister.addNetworkComponent(self.name, self.fields,
+#                                              conditionCollection.conditionStack,
+#                                              conditionCollection.branchNumber)
 
-    def getCode(self, indent):
-        result = "NetworkRead " + self.name
-        if len(self.fields):
-            result += " ("
-            for f in self.fields:
-                result += f[0] + ", "
-            result = result[:-2] # remove last comma
-            result += ")"
-        result += ';'
-        return result
+#    def getCode(self, indent):
+#        result = "NetworkRead " + self.name
+#        if len(self.fields):
+#            result += " ("
+#            for f in self.fields:
+#                result += f[0] + ", "
+#            result = result[:-2] # remove last comma
+#            result += ")"
+#        result += ';'
+#        return result
 
 ########################################################
 class ComponentDefineStatement(object):
@@ -823,7 +824,7 @@ class ComponentDefineStatement(object):
     def getAllBasenames(self, componentRegister):
 #        basenames = self.getAllBasenamesRecursively(self.functionTree)
 #        return map(lambda x: self.correctBasename(x), basenames)
-        return self.getAllBasenamesRecursively(self.functionTree, componentRegisteri)
+        return self.getAllBasenamesRecursively(self.functionTree, componentRegister)
 
     def getImmediateBasenameRecursively(self, functionTree):
         # no function

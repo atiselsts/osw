@@ -61,14 +61,20 @@
 // end
 
 
-do, period 500ms, once:
-    use redled, on;
-then, period 500ms, once:
-    use greenled, on;
-then, period 500ms, once:
-    use blueled, on;
-then:
-    use redled, off;
-    use greenled, off;
-    use blueled, off;
-end
+// do, period 500ms, once:
+//     use redled, on;
+// then, period 500ms, once:
+//     use greenled, on;
+// then, period 500ms, once:
+//     use blueled, on;
+// then:
+//     use redled, off;
+//     use greenled, off;
+//     use blueled, off;
+// end
+
+// read remotelight;
+// read remoterandom;
+define foo remotelight;
+read foo;
+output serial;
