@@ -63,6 +63,7 @@ PSOURCES-$(USE_SPI) += $(SRC)/chips/msp430/msp430_usci_spi.c
 PSOURCES-$(USE_I2C) += $(SRC)/chips/msp430/msp430_usci_i2c.c
 
 PSOURCES-$(USE_ADS8638) += $(SRC)/chips/ads8638/ads8638.c
+PSOURCES-$(USE_ADS8328) += $(SRC)/chips/ads8328/ads8328.c
 PSOURCES-$(USE_DAC7718) += $(SRC)/chips/dac7718/dac7718.c
 PSOURCES-$(USE_AD5258) += $(SRC)/chips/ad5258/ad5258.c
 

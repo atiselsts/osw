@@ -25,8 +25,10 @@
 #ifndef LIGHT_HAL_H
 #define LIGHT_HAL_H
 
-#include <adc.h>
 #include <platform.h>
+#if USE_ADC
+#include <adc.h>
+#endif
 
 #ifndef lightRead
 

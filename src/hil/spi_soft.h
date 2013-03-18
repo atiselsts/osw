@@ -135,6 +135,9 @@
  */
 uint8_t sw_spiExchByte(uint8_t b);
 
+// write a nibble (half of a byte) to software SPI
+void sw_spiWriteNibble(uint8_t nibble);
+
 #if SW_SPI_PIN_ERROR != 1
 
 #define SW_SPI_MOSI_HI()   pinSet(SW_MOSI_PORT, SW_MOSI_PIN)
@@ -174,6 +177,7 @@ uint8_t sw_spiExchByte(uint8_t b);
     while (0) {}
 
 #endif // if SW_SPI_PIN_ERROR != 1
+
 
 
 #endif  // OSW_SPI_SOFT_H

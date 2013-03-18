@@ -37,6 +37,7 @@
 #include <stdtypes.h>
 #include <errors.h>
 #include <hil/spi_hw.h>
+#include <hil/spi_soft.h>
 
 //! The constant used to specify software-SPI bus
 #define SPI_BUS_SW 128
