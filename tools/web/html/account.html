@@ -20,7 +20,8 @@ function userSave(){
 function codeInfo(){
     var elems = document.getElementsByTagName('select'), i;
 	for (i = 0; i < elems.length; i++) {
-		elems[i].form[elems[i].id][1].value = elems[i].value;
+		if(elems[i].form[elems[i].id][0].type == "hidden") elems[i].form[elems[i].id][0].value = elems[i].value;
+		else elems[i].form[elems[i].id][1].value = elems[i].value;
 	}
 	elems = document.getElementsByTagName('input')
 	for (i = 0; i < elems.length; i++) {
