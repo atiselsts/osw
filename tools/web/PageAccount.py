@@ -1,5 +1,15 @@
 import random
 class PageAccount():
+    def getAttributeType(self, attribute):
+        ua = self.settings.getCfgValue("userAttributes")
+        at = self.settings.getCfgValue("userAttributesType")
+        i = len(ua) - 1
+        while i > -1:
+            if attribute == ua[i]:
+                return at[i]
+            i -= 1
+        return "text"
+    
     def serveAccount(self, qs, isSession = False):
         if not isSession:
             self.setSession(qs)
@@ -49,9 +59,23 @@ class PageAccount():
                     if atr in ["name", "password"]:
                         continue
                     else:
-                        formCode += "<p>" + atr + ": " + "<input autocomplete='off' type='text' class='coded tocode' id='" + tcod
-                        formCode += "' value=\"" + tses.to_code(tuser.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
-                formCode += "<br><p>Password: <input autocomplete='off' type='password' class='tocode' id='psw1' name='password'></p>"
+                        ttype = self.getAttributeType(atr)
+                        if type(ttype) is list:
+                            formCode += "<p><input autocomplete='off' type='hidden' class='coded tocode list' id='" + tcod
+                            formCode += "' value=\"" + tses.to_code(tuser.get(atr, ""), False, tcod) + "\" name='" + atr + "'>"
+                            formCode += atr +": <select id='" + atr + "'>"
+                            for opt in ttype:
+                                formCode += "<option value=" + opt + ">" + opt + "</option>"
+                            formCode += "</select></p>"
+                        elif ttype == "bool":
+                            formCode += "<p><input autocomplete='off' type='hidden' class='coded tocode bool' id='" + tcod
+                            formCode += "' value=\"" + tses.to_code(tuser.get(atr, ""), False, tcod) + "\" name='" + atr + "'>"
+                            formCode += "<input type='checkbox' class='checkbox' id='" + atr + "'>" + atr + "</p>"
+                        else:
+                            formCode += "<p>" + atr + ": <input autocomplete='off' type='text' class='coded tocode' id='" + tcod
+                            formCode += "' value=\"" + tses.to_code(tuser.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
+                formCode += "<br><p><strong>Fill to change password:</strong></p>"
+                formCode += "<p>Password: <input autocomplete='off' type='password' class='tocode' id='psw1' name='password'></p>"
                 formCode += "<p><input type='hidden' id='pswcheck' name='pswcheck'>"
                 formCode += "Re password: <input autocomplete='off' type='password' class='tocode' id='psw2'></p>"
                 formCode += "<p><input type='hidden' class='md5' id='randtextsave' name='saveuser'>"

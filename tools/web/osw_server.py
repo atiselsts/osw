@@ -4,7 +4,7 @@
 # OSW web server - main file
 #
 
-import os, sys, platform, datetime, cookielib, random, md5
+import os, sys, platform#, datetime, cookielib, random, md5
 import threading, time, serial, select, socket, cgi, subprocess, struct, signal
 import json
 from PageLogin import *
@@ -274,7 +274,6 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         for m in motes.getMotes():
             name = "mote" + str(i)
             text += '<div class="mote"><strong>Mote: </strong>' + m.portName
-            text += ' <input type="hidden" name="sma" class="Msma37" value="0"> '
             text += ' <input type="submit" name="' + name \
                 + '_cfg" title="Get/set mote\'s configuration (e.g. sensor reading periods)" value="Configuration..." ' + disabled + '/>\n'
             text += ' <input type="submit" name="' + name \
@@ -313,12 +312,13 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         if filename[-4:] == '.css':
             mimetype = 'text/css'
             if filename[-9:] == 'theme.css':
-                filename = filename[:-4] + '1' + '.css'
+                filename = filename[:-4] + 'simple' + '.css' #'simple' nokulsejuma
                 theme = self.getCookie("Msma37")
                 if theme:
                     theme = allSessions.get_session_old(theme)
-                    if theme and hasattr(theme, "_user") and "theme" in theme._user and theme._user["theme"] != "0":
-                        theme = filename[:-5] + theme._user["theme"] + '.css'
+                    if theme and hasattr(theme, "_user") and "theme" in theme._user and theme._user["theme"] != "server":
+                        # "server" means as same as server
+                        theme = filename[:-10] + theme._user["theme"] + '.css'
                         if os.path.exists(theme):
                             filename = theme
         elif filename[-3:] == '.js': mimetype = 'application/javascript'
@@ -968,7 +968,7 @@ def initalizeUsers():
 
     
     ua = settingsInstance.getCfgValue("userAttributes")
-    na = set(ua) - set(allUsers._userAttributes)
+    na = set(ua) - set(allUsers._userAttributes) #new atributes
     if len(na) > 0:
         dv = settingsInstance.getCfgValue("defaultValues")
         av = settingsInstance.getCfgValue("adminValues")

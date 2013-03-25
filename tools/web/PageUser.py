@@ -24,8 +24,21 @@ class PageUser():
                 if atr in ["name", "password"]:
                     continue
                 else:
-                    formCode += "<p>" + atr + ": " + "<input autocomplete='off' type='text' class='coded tocode' id='" + tcod
-                    formCode += "' value=\"" + tses.to_code(user.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
+                    ttype = self.getAttributeType(atr)
+                    if type(ttype) is list:
+                        formCode += "<p><input autocomplete='off' type='hidden' class='coded tocode list' id='" + tcod
+                        formCode += "' value=\"" + tses.to_code(user.get(atr, ""), False, tcod) + "\" name='" + atr + "'>"
+                        formCode += atr +": <select id='" + atr + "'>"
+                        for opt in ttype:
+                            formCode += "<option value=" + opt + ">" + opt + "</option>"
+                        formCode += "</select></p>"
+                    elif ttype == "bool":
+                        formCode += "<p><input autocomplete='off' type='hidden' class='coded tocode bool' id='" + tcod
+                        formCode += "' value=\"" + tses.to_code(user.get(atr, ""), False, tcod) + "\" name='" + atr + "'>"
+                        formCode += "<input type='checkbox' class='checkbox' id='" + atr + "'>" + atr + "</p>"
+                    else:
+                        formCode += "<p>" + atr + ": " + "<input autocomplete='off' type='text' class='coded tocode' id='" + tcod
+                        formCode += "' value=\"" + tses.to_code(user.get(atr, ""), False, tcod) + "\" name='" + atr + "'></p>"
             formCode += "<p><input type='checkbox' class='md5' id='yesplease' name='password'>Reset passsord.</p>"
             formCode += "<p><input type='hidden' id='randtextsave' name='saveuser'>"
             formCode += "<input type='submit' onclick='return userSave()' value='Save'>"

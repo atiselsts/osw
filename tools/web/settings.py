@@ -31,8 +31,9 @@ class Settings(object):
             #user.cfg
             self.userDirectory = "user"
             self.userFile = "user.dat"
-            self.userAttributes = ["name","password","level"]
-            self.defaultValues = ["Unknown","5f4dcc3b5aa765d61d8327deb882cf99","1"] #password "password"
+            self.userAttributes = ["name", "password", "level"]
+            self.userAttributesType = ["text", "text", ["1", "9"]]
+            self.defaultValues = ["unknown","5f4dcc3b5aa765d61d8327deb882cf99","1"] #password "password"
             self.adminValues = ["admin","21232f297a57a5a743894a0e4a801fc3","9"] #password "admin"
             self.userWebAttributes = [] #user editable (password is built-in)
             self.adminWebAttributes = ["level"] #admin editable (reset password is built-in and name is uneditable)
@@ -42,11 +43,33 @@ class Settings(object):
     configurationFileName = "server.cfg"
     userconfigurationFileName = "user.cfg"
     _inFile = {}
-
+    def listInList(self, alist):
+        i = len(alist) - 1
+        blist = []
+        while i > 0:
+            if alist[i][-1:] == "]":
+                j = i - 1
+                clist = [alist[i][:-1]]
+                while j > -1:
+                    if alist[j][:1] == "[":
+                        clist.insert(0, alist[j][1:])
+                        blist.insert(0, clist)
+                        i = j
+                        break
+                    else:
+                        clist.insert(0, alist[j])
+                    j -= 1
+                if j == -1: blist.insert(0, alist[i]) #no one befor start with "["
+            else:
+                blist.insert(0, alist[i])
+            i -= 1
+        if i == 0: blist.insert(0, alist[0])
+            #element [0] isn't check if it end with 0, but could be added
+        return blist
     def load(self):
         self.comments = {}
         tmpComment = ""
-
+        
         for files in [self.configurationFileName, self.userconfigurationFileName]:
             with open(files, 'r') as f:
                 line = 0
@@ -82,6 +105,7 @@ class Settings(object):
                         self.cfg.__setattr__(key, vv[0])
                     else:
                         # value list
+                        vv = self.listInList(vv)
                         self.cfg.__setattr__(key, vv)
 
                 if tmpComment:
