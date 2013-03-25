@@ -123,7 +123,14 @@ class Settings(object):
                     f.write('=')
                     if isinstance(value, list):
                         # value list
-                        f.write(",".join(value))
+                        first = True
+                        for values in value:
+                            if not first: f.write(",")
+                            if isinstance(values, list):
+                                f.write("[" + ",".join(values) + "]")
+                            else:
+                                f.write(values)
+                            first = False
                     else:
                         # single value
                         f.write(value)
