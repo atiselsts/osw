@@ -830,7 +830,10 @@ class Component(object):
         self.isRemote = False
         # based on an remote sensor(s)?
         self.isRemoteBased = False
-        
+        # all *physical* base sensors for this
+        self.baseSensors = set()
+        # all derived *physical* components
+        self.derivedSensors = set()        
 
 #    def isRemote(self):
 #        return False # XXX FIXME
@@ -1160,10 +1163,6 @@ class Sensor(Component):
 #        self.remoteFields = []
         self.containingOutputComponent = None
         self.generatedDefaultRawReadFunction = False
-        # all *physical* base sensors for this
-        self.baseSensors = set()
-        # all derived *physical* components
-        self.derivedSensors = set()
 
     def getSystemwideID(self):
         if self.systemwideID is not None: return self.systemwideID

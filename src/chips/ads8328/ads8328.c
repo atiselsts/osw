@@ -33,8 +33,7 @@
 #define ADS8328_SPI_ENABLE()   spiSlaveEnable(ADS8328_CS_PORT, ADS8328_CS_PIN)
 #define ADS8328_SPI_DISABLE()  spiSlaveDisable(ADS8328_CS_PORT, ADS8328_CS_PIN)
 
-// TODO: use this! (?)
-static uint8_t adsRange;
+static uint8_t adsChannel;
 
 uint16_t ads8328ReadData(void)
 {
@@ -72,17 +71,21 @@ uint16_t ads8328ConfigRegRead(void)
 
 void ads8328RegWrite4(uint8_t address)
 {
+    uint8_t array[2];
+    array[0] = address << 4;
+    array[1] = 0;
     ADS8328_SPI_ENABLE();
-    sw_spiWriteNibble(address);
+    spiExchange(ADS8328_SPI_ID, array, sizeof(array));
     ADS8328_SPI_DISABLE();
 }
 
 void ads8328RegWrite16(uint8_t address, uint16_t data)
 {
+    uint8_t array[2];
+    array[0] = (address << 4) | ((data >> 8) & 0xf);
+    array[1] = data & 0xff;
     ADS8328_SPI_ENABLE();
-    sw_spiWriteNibble(address);
-    sw_spiWriteNibble(data >> 8);
-    spiWriteByte(ADS8328_SPI_ID, data & 0xff);
+    spiExchange(ADS8328_SPI_ID, array, sizeof(array));
     ADS8328_SPI_DISABLE();
 }
 
@@ -99,34 +102,45 @@ void ads8328Init(void)
     // setup End of Conversion pin (low while conversion in progress)
     pinAsInput(ADS8328_EOC_PORT, ADS8328_EOC_PIN);
 
-    // turn on internal ref
-    // ads8328RegWrite(ADS8328_REG_AUX_CONFIG, ADS8328_INTERNAL_VREF_ON);
-
-    // select channel 0 with configured range
-    ads8638SelectChannel(ADS8638_CHANNEL_0, ADS8638_RANGE_CONFIG);
+    // select channel 0
+    ads8638SelectChannel(ADS8638_CHANNEL_0);
 }
 
-void ads8638SelectChannel(uint8_t channel, uint8_t range)
+void ads8638SelectChannel(uint8_t channel)
 {
-    adsRange = range;
-
-    ads8328RegWrite4(channel == ADS8638_CHANNEL_0 ?
-            ADS8328_REG_CHANNEL0 :
-            ADS8328_REG_CHANNEL1);
+    adsChannel = channel;
 }
 
 bool ads8328Read(uint16_t *value)
 {
+    // select channel
+    ads8328RegWrite4(adsChannel == ADS8638_CHANNEL_0 ?
+                     ADS8328_REG_CHANNEL0 :
+                     ADS8328_REG_CHANNEL1);
+    mdelay(1);
+
+    // wait for conv to end
+    while (!pinRead(ADS8328_EOC_PORT, ADS8328_EOC_PIN));
+
     // start the conversion
     pinClear(ADS8328_CONVST_PORT, ADS8328_CONVST_PIN);
     udelay(1);
     pinSet(ADS8328_CONVST_PORT, ADS8328_CONVST_PIN);
 
     // wait for end of conversion
-    while (!pinRead(ADS8328_EOC_PORT, ADS8328_EOC_PIN));
+//    while (!pinRead(ADS8328_INT_PORT, ADS8328_INT_PIN));
+//    while (pinRead(ADS8328_EOC_PORT, ADS8328_EOC_PIN));
 
-    // read the result
-    *value = ads8328ReadData();
+    uint8_t array[2];
+    array[0] = ADS8328_REG_DATA << 4;
+    array[1] = 0;
+    ADS8328_SPI_ENABLE();
+    spiExchange(ADS8328_SPI_ID, array, sizeof(array));
+    ADS8328_SPI_DISABLE();
+
+    *value = array[0];
+    *value <<= 8;
+    *value |= array[1];
 
     return true;
 }

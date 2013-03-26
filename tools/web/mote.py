@@ -177,7 +177,10 @@ class MoteCollection(object):
 
     def addAll(self):
         self.motes = []
-        staticPorts = set(settingsInstance.getCfgValue("motes"))
+        cfgMotes = settingsInstance.getCfgValue("motes")
+        if not isinstance(cfgMotes, list):
+            cfgMotes = [cfgMotes]
+        staticPorts = set(cfgMotes)
 
         dynamicPorts = set()
 #        for x in list_ports.comports():

@@ -45,7 +45,7 @@ BSL ?= python tos-bsl
 MSP430-BSL ?= python tos-bsl
 else
 BSL ?= python $(SRC)/make/scripts/tos-bsl
-MSP430-BSL ?= python $(SRCROOT)/mos/make/scripts/bsl.py
+MSP430-BSL ?= python $(SRC)/make/scripts/bsl.py
 endif
 
 # this option is needed for testbed device
