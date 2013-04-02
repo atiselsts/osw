@@ -650,7 +650,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
                     allData += sensor + ":"
                     for measur in mote[sensor]:
                         allData += str(measur[0]) + "," + str(measur[1]) + ";"
-                    allData += "/"
+                    allData += "|"
         lastData = allData
         self.writeChunk(allData)
         self.writeFinalChunk()
