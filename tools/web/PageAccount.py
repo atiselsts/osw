@@ -3,6 +3,10 @@ class PageAccount():
     def getAttributeType(self, attribute):
         ua = self.settings.getCfgValue("userAttributes")
         at = self.settings.getCfgValue("userAttributesType")
+        if isinstance(ua, str):
+            ua = [ua]
+        if isinstance(at, str):
+            at = [at]
         i = len(ua) - 1
         while i > -1:
             if attribute == ua[i]:
@@ -18,6 +22,8 @@ class PageAccount():
             return
         changes = {}
         webAttributes = self.settings.getCfgValue("userWebAttributes")
+        if isinstance(webAttributes, str):
+            webAttributes = [webAttributes]
         tses = self.sessions.get_session(qs["sma"][0])
         changes["INFO"] = ''
         if "saveuser" in qs:

@@ -3,6 +3,8 @@ class PageUser():
     def serveEditUsers(self, qs):
         tses = self.sessions.get_session(qs["sma"][0])
         webAttributes = self.settings.getCfgValue("adminWebAttributes")
+        if isinstance(webAttributes, str):
+            webAttributes = [webAttributes]
         user = self.users.get_user("name", tses.from_code(qs["edituser"][0]))
         if not user:
             del qs["edituser"]

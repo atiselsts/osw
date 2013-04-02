@@ -28,6 +28,9 @@ class Settings(object):
             self.oswDirectory = "../.."
             self.sealBlocklyDirectory = "seal-blockly"
             self.createDaemon = "False"
+            self.serverTheme = "simple"
+            self.serverWebSettings = ["serverTheme"]
+            self.serverSettingsType = [["simple","green"]]
             #user.cfg
             self.userDirectory = "user"
             self.userFile = "user.dat"
