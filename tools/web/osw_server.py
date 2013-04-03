@@ -515,35 +515,30 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
 
         action = "Stop" if isListening else "Start"
         
+        dataFilename = settingsInstance.getCfgValue("saveToFilename")
+        saveProcessedData = settingsInstance.getCfgValueAsBool("saveProcessedData")
+        
         if self.getLevel() > 1:
             if "dataFile" in qs:
                 dataFilename = qs["dataFile"][0]
                 if len(dataFilename) and dataFilename.find(".") == -1:
                     dataFilename += ".csv"
-            else:
-                dataFilename = settingsInstance.getCfgValue("saveToFilename")
-    
-            saveMultipleFiles = settingsInstance.getCfgValueAsBool("saveMultipleFiles")
-            saveProcessedData = settingsInstance.getCfgValueAsBool("saveProcessedData")
             if "dataType" in qs:
                 saveProcessedData = not qs["dataType"][0] == "raw"
                 saveMultipleFiles = qs["dataType"][0] == "mprocessed"
 
-            rawdataChecked = not saveProcessedData
-            sprocessedChecked = saveProcessedData and not saveMultipleFiles
-            mprocessedChecked = saveProcessedData and saveMultipleFiles
-    
             settingsInstance.setCfgValue("saveToFilename", dataFilename)
             settingsInstance.setCfgValue("saveProcessedData", bool(saveProcessedData))
-            settingsInstance.setCfgValue("saveMultipleFiles", bool(saveMultipleFiles))
             settingsInstance.save()
+        
+        rawdataChecked = not saveProcessedData
+        mprocessedChecked = saveProcessedData
 
         self.serveBody("listen", qs,
                        {"LISTEN_TXT" : txt,
                         "MOTE_ACTION": action,
                         "DATA_FILENAME" : dataFilename,
                         "RAWDATA_CHECKED" : 'checked="checked"' if rawdataChecked else "",
-                        "SPROCDATA_CHECKED" : 'checked="checked"' if sprocessedChecked else "",
                         "MPROCDATA_CHECKED" : 'checked="checked"' if mprocessedChecked else ""})
         self.serveFooter()
 

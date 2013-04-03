@@ -21,7 +21,6 @@ class Settings(object):
             self.saveToFilename = ""
             self.saveToFilenameOnMote = ""
             self.saveProcessedData = "False"
-            self.saveMultipleFiles = "False"
             self.slowUpload = "False"
             self.htmlDirectory = "html"
             self.dataDirectory = "data"

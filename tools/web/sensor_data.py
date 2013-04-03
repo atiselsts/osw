@@ -39,6 +39,8 @@ class SensorData(object):
             os.makedirs(self.dirname)
 
     def addNewData(self, string, motename):
+        if motename[:5].lower() == "/dev/":
+            motename = motename[5:]
         string = string.rstrip()
         eqSignPos = string.find('=')
         if eqSignPos == -1: return
@@ -71,8 +73,7 @@ class SensorData(object):
         self.data[dataName + "@" + motename].append([int(round(time.time()*1000)),value])#miliseconds since 1970
         # save to file if required (multiple files)
         if settingsInstance.cfg.saveToFilename \
-                and settingsInstance.cfg.saveProcessedData \
-                and settingsInstance.cfg.saveMultipleFiles:
+                and settingsInstance.cfg.saveProcessedData:
 
             # one more sanity check of dataName
             if len(dataName) > 64:
