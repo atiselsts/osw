@@ -21,13 +21,15 @@ class Settings(object):
             self.saveToFilename = ""
             self.saveToFilenameOnMote = ""
             self.saveProcessedData = "False"
-            self.saveMultipleFiles = "False"
             self.slowUpload = "False"
             self.htmlDirectory = "html"
             self.dataDirectory = "data"
             self.oswDirectory = "../.."
             self.sealBlocklyDirectory = "seal-blockly"
             self.createDaemon = "False"
+            self.serverTheme = "simple"
+            self.serverWebSettings = ["serverTheme"]
+            self.serverSettingsType = [["simple","green"]]
             #user.cfg
             self.userDirectory = "user"
             self.userFile = "user.dat"

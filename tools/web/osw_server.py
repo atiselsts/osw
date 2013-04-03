@@ -8,6 +8,7 @@ import os, sys, platform#, datetime, cookielib, random, md5
 import threading, time, serial, select, socket, cgi, subprocess, struct, signal
 import json
 from PageLogin import *
+from PageServer import *
 from PageAccount import *
 from PageUser import *
 from settings import *
@@ -36,7 +37,7 @@ listenThread = None
 lastUploadCode = ""
 lastUploadConfig = ""
 lastUploadFile = ""
-lastJsonData = ""
+lastData = ""
 
 isInSubprocess = False
 uploadResult = ""
@@ -107,7 +108,7 @@ def getOswVersion():
     return result
 
 # --------------------------------------------
-class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin, setAndServeSessionAndHeader):
+class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin, PageServer, setAndServeSessionAndHeader):
     server_version = 'OSW/' + getOswVersion() + ' Web Server'
     protocol_version = 'HTTP/1.1' # 'HTTP/1.0' is the default, but we want chunked encoding
     def writeChunk(self, buffer):
@@ -128,11 +129,6 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
                          (self.client_address[0],
                           self.log_date_time_string(),
                           format%args))
-
-    def haveAccess(self, qs={}):
-        if self.getLevel() > 1:
-            return True
-        return False
 
     def serveHeader(self, name, qs = {"no": "no"}, isGeneric = True, includeBodyStart = True, replaceValues = None, urlTo = ""):
         self.headerIsServed = True
@@ -200,6 +196,14 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
                                 contents = contents.replace("%" + v + "%", replaceValues[v])
                         if "sma" in qs: contents = contents.replace("%SMA%", qs["sma"][0])
                         self.writeChunk(contents)
+                if self.getLevel() > 8:
+                    with open(htmlDirectory + "/menu-9.html", "r") as f:
+                        contents = f.read()
+                        if replaceValues:
+                            for v in replaceValues:
+                                contents = contents.replace("%" + v + "%", replaceValues[v])
+                        if "sma" in qs: contents = contents.replace("%SMA%", qs["sma"][0])
+                        self.writeChunk(contents)
 
             with open(htmlDirectory + "/top-end.html", "r") as f:
                 contents = f.read()
@@ -213,7 +217,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
                 self.writeChunk(contents)
 
     def serveBody(self, name, qs = {'sma': ['0000000'],}, replaceValues = None):
-        disabled = "" if self.haveAccess(qs) else 'disabled="disabled" '
+        disabled = "" if self.getLevel() > 1 else 'disabled="disabled" '
         with open(htmlDirectory + "/" + name + ".html", "r") as f:
             contents = f.read()
             if replaceValues:
@@ -231,7 +235,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         else:
             text += '<form action="' + action + '">'
         self.writeChunk(text)
-        disabled = "" if self.haveAccess(qs) else 'disabled="disabled" '
+        disabled = "" if self.getLevel() > 1 else 'disabled="disabled" '
         c = ""
         i = 0
         for m in motes.getMotes():
@@ -268,7 +272,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         text = '<form action="config"><div class="motes2">\n'
         text += 'Directly attached motes:<br/>\n'
         
-        disabled = "" if self.haveAccess(qs) else 'disabled="disabled" '
+        disabled = "" if self.getLevel() > 1 else 'disabled="disabled" '
 
         i = 0
         for m in motes.getMotes():
@@ -312,13 +316,14 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         if filename[-4:] == '.css':
             mimetype = 'text/css'
             if filename[-9:] == 'theme.css':
-                filename = filename[:-4] + 'simple' + '.css' #'simple' nokulsejuma
+                tpath = filename[:-4]
+                filename = filename[:-4] + settingsInstance.getCfgValue("serverTheme") + '.css'
                 theme = self.getCookie("Msma37")
                 if theme:
                     theme = allSessions.get_session_old(theme)
                     if theme and hasattr(theme, "_user") and "theme" in theme._user and theme._user["theme"] != "server":
                         # "server" means as same as server
-                        theme = filename[:-10] + theme._user["theme"] + '.css'
+                        theme = tpath + theme._user["theme"] + '.css'
                         if os.path.exists(theme):
                             filename = theme
         elif filename[-3:] == '.js': mimetype = 'application/javascript'
@@ -509,35 +514,31 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
             txt += line + "<br/>"
 
         action = "Stop" if isListening else "Start"
-
-        if "dataFile" in qs:
-            dataFilename = qs["dataFile"][0]
-            if len(dataFilename) and dataFilename.find(".") == -1:
-                dataFilename += ".csv"
-        else:
-            dataFilename = settingsInstance.getCfgValue("saveToFilename")
-
-        saveMultipleFiles = settingsInstance.getCfgValueAsBool("saveMultipleFiles")
+        
+        dataFilename = settingsInstance.getCfgValue("saveToFilename")
         saveProcessedData = settingsInstance.getCfgValueAsBool("saveProcessedData")
-        if "dataType" in qs:
-            saveProcessedData = not qs["dataType"][0] == "raw"
-            saveMultipleFiles = qs["dataType"][0] == "mprocessed"
+        
+        if self.getLevel() > 1:
+            if "dataFile" in qs:
+                dataFilename = qs["dataFile"][0]
+                if len(dataFilename) and dataFilename.find(".") == -1:
+                    dataFilename += ".csv"
+            if "dataType" in qs:
+                saveProcessedData = not qs["dataType"][0] == "raw"
+                saveMultipleFiles = qs["dataType"][0] == "mprocessed"
 
+            settingsInstance.setCfgValue("saveToFilename", dataFilename)
+            settingsInstance.setCfgValue("saveProcessedData", bool(saveProcessedData))
+            settingsInstance.save()
+        
         rawdataChecked = not saveProcessedData
-        sprocessedChecked = saveProcessedData and not saveMultipleFiles
-        mprocessedChecked = saveProcessedData and saveMultipleFiles
-
-        settingsInstance.setCfgValue("saveToFilename", dataFilename)
-        settingsInstance.setCfgValue("saveProcessedData", bool(saveProcessedData))
-        settingsInstance.setCfgValue("saveMultipleFiles", bool(saveMultipleFiles))
-        settingsInstance.save()
+        mprocessedChecked = saveProcessedData
 
         self.serveBody("listen", qs,
                        {"LISTEN_TXT" : txt,
                         "MOTE_ACTION": action,
                         "DATA_FILENAME" : dataFilename,
                         "RAWDATA_CHECKED" : 'checked="checked"' if rawdataChecked else "",
-                        "SPROCDATA_CHECKED" : 'checked="checked"' if sprocessedChecked else "",
                         "MPROCDATA_CHECKED" : 'checked="checked"' if mprocessedChecked else ""})
         self.serveFooter()
 
@@ -567,6 +568,8 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
     def serveUploadResult(self, qs):
         global uploadResult
         global isInSubprocess
+        #if self.getLevel() < 2:
+        #    self.serveDefault(qs)
         isInSubprocess = True
         try:
             self.setSession(qs)
@@ -576,7 +579,6 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
             self.serveHeader("upload", qs)
             self.writeChunk('<button type="button" onclick="window.open(\'\', \'_self\', \'\'); window.close();">OK</button><br/>')
             self.writeChunk("Upload result:<br/><pre>\n")
-#??
             while isInSubprocess or uploadResult:
                 if uploadResult:
                     self.writeChunk(uploadResult)
@@ -606,7 +608,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         path = os.path.join(sealBlocklyPath, "index.html")
         with open(path) as f:
             contents = f.read()
-            disabled = 'disabled="disabled"' if not self.haveAccess() else ""
+            disabled = 'disabled="disabled"' if not self.getLevel() > 1 else ""
             contents = contents.replace("%DISABLED%", disabled)
             self.writeChunk(contents)
         self.writeFinalChunk()
@@ -616,12 +618,12 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         self.send_response(200)
         self.sendDefaultHeaders()
         self.end_headers()
-        if self.haveAccess(qs):
+        if self.getLevel() > 1:
             self.writeChunk("writeAccess=True")
         self.writeFinalChunk()
 
     def serveGraphsData(self, qs):
-        global lastJsonData
+        global lastData
 
         self.send_response(200)
         self.sendDefaultHeaders()
@@ -629,19 +631,23 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
 
         # if not listening at the moment,
         # but were listening previosly, send the previous data
-        if not isListening and lastJsonData :
-            self.writeChunk(lastJsonData)
+        if not isListening and lastData :
+            self.writeChunk(lastData)
             self.writeFinalChunk()
             return
 
         # get the data to display in graphs
+        allData = ""
         if moteData.hasData():
-            jsonData = json.JSONEncoder().encode(moteData.getData())
-        else:
-            jsonData = ""
-
-        lastJsonData = jsonData
-        self.writeChunk(jsonData)
+            data = moteData.getData()
+            for mote in data:
+                for sensor in mote.keys():
+                    allData += sensor + ":"
+                    for measur in mote[sensor]:
+                        allData += str(measur[0]) + "," + str(measur[1]) + ";"
+                    allData += "|"
+        lastData = allData
+        self.writeChunk(allData)
         self.writeFinalChunk()
 
     def serveListenData(self, qs):
@@ -656,7 +662,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         self.writeFinalChunk()
 
     def do_GET(self):
-        #global (temp)
+        #global
         self.sessions = allSessions
         self.users = allUsers
         self.settings = settingsInstance
@@ -683,6 +689,8 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
             self.serveUpload(qs)
         elif o.path == "/login":
             self.serveLogin(qs)
+        elif o.path == "/server":
+            self.serveServer(qs)
         elif o.path == "/account":
             self.serveAccount(qs)
         elif o.path == "/users":
@@ -721,7 +729,8 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         global lastUploadCode
         global lastUploadConfig
         global lastUploadFile
-
+        #if self.getLevel < 2:
+        #    return 1
         retcode = 0
         if not os.path.exists("build"):
             os.mkdir("build")
