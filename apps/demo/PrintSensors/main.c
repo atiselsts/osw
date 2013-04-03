@@ -34,9 +34,11 @@ void appMain(void)
 
     while (1) {
         uint16_t light = lightRead();
+        uint16_t battery = adcRead(ADC_INTERNAL_VOLTAGE);
         uint16_t humidity = humidityRead();
         uint16_t temperature = temperatureRead();
         PRINTF("light = %u\n", light);
+        PRINTF("battery = %u\n", battery);
         PRINTF("humidity = %u\n", humidity);
         PRINTF("temperature = %u\n", temperature);
         msleep(2000); // sleep two seconds

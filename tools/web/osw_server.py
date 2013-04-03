@@ -128,7 +128,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
                          (self.client_address[0],
                           self.log_date_time_string(),
                           format%args))
-        
+
     def haveAccess(self, qs={}):
         if self.getLevel() > 1:
             return True

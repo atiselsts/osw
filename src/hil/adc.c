@@ -61,6 +61,8 @@ void adcSetChannel(uint8_t ch)
     if (wasOn) hplAdcOn();
 }
 
+// TODO: investigate why adc cannot be turned on on demand
+
 uint16_t adcRead(uint8_t ch)
 {
     uint16_t retval;
@@ -86,9 +88,9 @@ uint16_t adcRead(uint8_t ch)
     retval = hplAdcGetVal();
 
     // reset back to original state
-    if (!wasOn) {
-        hplAdcOff();
-    }
+//    if (!wasOn) {
+//        hplAdcOff();
+//    }
 
     return retval;
 }

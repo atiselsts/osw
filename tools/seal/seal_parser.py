@@ -177,7 +177,7 @@ class SealParser():
         lst = zip(prefixList, suffixList)
 
         if isTimeValue(suffixList[-1]):
-            # convet to milliseconds for simpler later processing
+            # convert to milliseconds for simpler later processing
             lst = convertTimeValue(lst)
             if lst is None:
                 self.errorMsgLexer("Unknown format literal for time value\n".format(suffix))
