@@ -81,7 +81,6 @@ class SealParser():
     reserved = {
       "use": "USE_TOKEN",
       "read": "READ_TOKEN",
-#      "networkread": "NETWORK_READ_TOKEN",
       "output": "OUTPUT_TOKEN",
       "when": "WHEN_TOKEN",
       "else": "ELSE_TOKEN",
@@ -89,10 +88,10 @@ class SealParser():
       "end": "END_TOKEN",
       "do": "DO_TOKEN",
       "then": "THEN_TOKEN",
-#      "parameters": "PARAMETERS_TOKEN",
       "define": "DEFINE_TOKEN",
       "config": "CONFIG_TOKEN",
       "const": "CONST_TOKEN",
+      "set": "SET_TOKEN",
       "pattern": "PATTERN_TOKEN",
       "load": "LOAD_TOKEN",
       "where": "WHERE_TOKEN",
@@ -239,7 +238,8 @@ class SealParser():
                        | do_block
                        | system_config
                        | pattern_declaration
-                       | const_statement 
+                       | const_statement
+                       | set_statement
                        | define_statement
                        | load_statement
                        | ';'
@@ -287,6 +287,11 @@ class SealParser():
             self.errorMsg(p, "Constant '{}' already defined, ignoring".format(name), False)
         else:
             components.componentRegister.systemConstants[name] = value
+
+    def p_set_statement(self, p):
+        '''set_statement : SET_TOKEN IDENTIFIER_TOKEN functional_expression ';'
+        '''
+        p[0] = SetStatement(p[2], Expression(right=p[3]))
 
     def p_pattern_declaration(self, p):
         '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'

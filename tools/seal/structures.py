@@ -175,17 +175,16 @@ class FunctionTree(object):
             self.function = function[1].lower()
         self.arguments = arguments
 
-    def isConstant(self):
-        return len(self.arguments) == 0 \
-            and not isinstance(self.function, SealValue) \
-            and (isinstance(const, int) \
+    def isConstant(self, componentRegister):
+        if len(self.arguments) or isinstance(self.function, SealValue):
+            return False
+        const = self.function.getRawValue(componentRegister)
+        return (isinstance(const, int) \
                 or isinstance(const, long) \
                 or isinstance(const, float))
 
     def asConstant(self, componentRegister):
-        if len(self.arguments):
-            return None
-        if isinstance(self.function, SealValue):
+        if len(self.arguments) or isinstance(self.function, SealValue):
             return None
         const = self.function.getRawValue(componentRegister)
         if isinstance(const, int) \
@@ -682,27 +681,27 @@ class ConstStatement(object):
         return "const " + self.name + " " + self.value.getCode() + ';'
 
 ########################################################
-#class SetStatement(object):
-#    def __init__(self, name, expression):
-#        self.name = name.lower()
-#        self.expression = expression
-#
-#    def addComponents(self, componentRegister, conditionCollection):
-#        self.conditionStack = list(conditionCollection.conditionStack)
-#        self.branchNumber = conditionCollection.branchNumber
-#        componentRegister.setState(self.name)
-#
-#    def finishAdding(self, componentRegister):
-#        componentRegister.systemStates[self.name].addUseCase(
-#            self.expression,
-#            self.conditionStack,
-#            self.branchNumber)
-#
-#    def getCode(self, indent):
-#        return "set " + self.name + " " + self.expression.getCode() + ';'
-#
-#    def collectImplicitDefines(self):
-#        return self.expression.collectImplicitDefines(None)
+class SetStatement(object):
+    def __init__(self, name, expression):
+        self.name = name.lower()
+        self.expression = expression
+
+    def addComponents(self, componentRegister, conditionCollection):
+        self.conditionStack = list(conditionCollection.conditionStack)
+        self.branchNumber = conditionCollection.branchNumber
+        componentRegister.setState(self.name)
+
+    def finishAdding(self, componentRegister):
+        componentRegister.systemStates[self.name].addUseCase(
+            self.expression,
+            self.conditionStack,
+            self.branchNumber)
+
+    def getCode(self, indent):
+        return "set " + self.name + " " + self.expression.getCode() + ';'
+
+    def collectImplicitDefines(self):
+        return self.expression.collectImplicitDefines(None)
 
 ########################################################
 #class NetworkReadStatement(object):
@@ -1147,7 +1146,7 @@ class CodeBlock(object):
         # add implicitly declared virtual sensors
         implicitDefines = []
         for d in self.declarations:
-            if isinstance(d, ComponentUseCase): # or isinstance(d, SetStatement):
+            if isinstance(d, ComponentUseCase) or isinstance(d, SetStatement):
                 implicitDefines += d.collectImplicitDefines()
         self.declarations += implicitDefines
         # collect implicit defines from conditions too...
@@ -1188,6 +1187,9 @@ class CodeBlock(object):
 #                    or type(d) is SetStatement:
 #                d.addComponents(componentRegister, conditionCollection)
 
+#            if type(d) is SetStatement:
+#                d.addComponents(componentRegister, conditionCollection)
+
             if type(d) is LoadStatement:
                 if self.blockType != CODE_BLOCK_TYPE_PROGRAM:
                     componentRegister.userError("Load statements supported only at the top level, ignoring '{0}'\n".format(
@@ -1196,9 +1198,9 @@ class CodeBlock(object):
                     d.load(componentRegister)
 
         # add set statements (may depend on virtual components)
-#        for d in self.declarations:
-#            if type(d) is SetStatement:
-#                d.addComponents(componentRegister, conditionCollection)
+        for d in self.declarations:
+            if type(d) is SetStatement:
+                d.addComponents(componentRegister, conditionCollection)
 
         conditionCollection.nextBranch()
 
@@ -1227,9 +1229,9 @@ class CodeBlock(object):
             d.finishAdding(componentRegister)
 
         # add set statements (may depend on virtual components)
-#        for d in self.declarations:
-#            if type(d) is SetStatement:
-#                d.finishAdding(componentRegister)
+        for d in self.declarations:
+            if type(d) is SetStatement:
+                d.finishAdding(componentRegister)
 
         conditionCollection.nextBranch()
 

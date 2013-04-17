@@ -69,7 +69,7 @@ def getUseCaseParameterValue(parameter, parameters):
 # 'additionalParametrs' - params in use case format: <name, Value(value)>
 # convertToParameterValue() must already have been called before.
 def mergeParameters(parameters, additionalParametrs):
-    result = parameters
+    result = copy.copy(parameters)
     for p in additionalParametrs.items():
         if p[1] != None:
             result[p[0]] = p[1]
@@ -833,7 +833,7 @@ class Component(object):
         # all *physical* base sensors for this
         self.baseSensors = set()
         # all derived *physical* components
-        self.derivedSensors = set()        
+        self.derivedSensors = set()
 
 #    def isRemote(self):
 #        return False # XXX FIXME
@@ -1111,7 +1111,7 @@ class Actuator(Component):
 
     def generateReadFunctions(self, outputFile, useCase):
         readFunctionSuffix = ""
-        self.sensorReadFunctionParams = self.parameters
+        self.sensorReadFunctionParams = copy.copy(self.parameters)
 
         subReadFunction = self.generateSubReadFunctions(outputFile)
 
@@ -2182,10 +2182,10 @@ class Sensor(Component):
             if isinstance(functionTree.function, SealValue):
                 name = functionTree.function.firstPart
                 # print "name = ", name
-#                if name in componentRegister.systemStates:
-#                    # special case for variables ("states")
-#                    # TODO: should replace code here for X.Y type values
-#                    return "sealState_" + name
+                if name in componentRegister.systemStates:
+                    # special case for variables ("states")
+                    # TODO: should replace code here for X.Y type values
+                    return "sealState_" + name
                 if root and root.containingOutputComponent:
                     # yeah!
                     componentName = root.containingOutputComponent.componentUseCase.outputUseCase.getNameCC()
@@ -2201,7 +2201,7 @@ class Sensor(Component):
             #print "inherit params from", self.name, "to", sensor.name
             return sensor.generateSubReadFunctions(outputFile, sensor.functionTree, root)
 
-        (validationOk, errorMessage) = validateFunction(functionTree)
+        (validationOk, errorMessage) = validateFunction(functionTree, componentRegister)
         if not validationOk:
             componentRegister.userError(errorMessage)
             return "0"
@@ -2304,6 +2304,7 @@ class Sensor(Component):
 
 
     def generateReadFunctions(self, outputFile, useCase):
+        # print "generateReadFunctions for ", self.name, " isUsed()", self.isUsed()
         if not self.isUsed(): return
 
         if self.isRemote:
@@ -3032,59 +3033,61 @@ class Output(Component):
 
 
 ######################################################
-#class SetUseCase(object):
-#    def __init__(self, parent, expression, conditions, branchNumber, isNew):
-#        self.parent = parent
-#        self.expressionCode = expression.getEvaluationCode(componentRegister)
-#        self.conditions = list(conditions) # deep copy!
-#        self.branchNumber = branchNumber
-#        self.isNew = isNew
-#        componentRegister.branchCollection.addUseCase(branchNumber, self)
-#
-#    def getType(self):
-#        return "int32_t"
-#
-#    def generateVariables(self, outputFile):
-#        if self.isNew:
-#            outputFile.write("{0} {1};\n".format(self.getType(), self.parent.getVariableName()))
-#
-#    def generateBranchEnterCode(self, outputFile):
-#        outputFile.write("    {\n")
-#        if self.expressionCode.find("isFilteredOut") != -1:
-#            # TODO: semantic problem - what to do when isFilteredOut happens to be true?
-#            outputFile.write("        bool isFilteredOut = false;\n")
-#
-#        # set the value
-#        outputFile.write("        {0} = {1}".format(self.parent.getVariableName(), self.expressionCode))
-#        # re-evaluate all conditions that depend on it
-#        for c in self.parent.dependentConditions:
-#            outputFile.write("        condition{}Callback();\n".format(c.id))
-#
-#        outputFile.write("    }\n")
-#
-#    def generateBranchExitCode(self, outputFile):
-#        pass
+class SetUseCase(object):
+    def __init__(self, parent, expression, conditions, branchNumber, isNew):
+        self.parent = parent
+        self.expressionCode = expression.getEvaluationCode(componentRegister)
+        self.conditions = list(conditions) # deep copy!
+        self.branchNumber = branchNumber
+        self.isNew = isNew
+        componentRegister.branchCollection.addUseCase(branchNumber, self)
+
+    def getType(self):
+        return "int32_t"
+
+    def generateVariables(self, outputFile):
+        if self.isNew:
+            outputFile.write("{0} {1};\n".format(self.getType(), self.parent.getVariableName()))
+
+    def generateBranchEnterCode(self, outputFile, isFromCallback):
+        # TODO: handle 'isFromCallback'?
+
+        outputFile.write("    {\n")
+        if self.expressionCode.find("isFilteredOut") != -1:
+            # TODO: semantic problem - what to do when isFilteredOut happens to be true?
+            outputFile.write("        bool isFilteredOut = false;\n")
+
+        # set the value
+        outputFile.write("        {0} = {1};\n".format(self.parent.getVariableName(), self.expressionCode))
+        # re-evaluate all conditions that depend on it
+        for c in self.parent.dependentConditions:
+            outputFile.write("        condition{}Callback();\n".format(c.id))
+
+        outputFile.write("    }\n")
+
+    def generateBranchExitCode(self, outputFile):
+        pass
 
 
 ######################################################
-#class SystemState(object):
-#    def __init__(self, name):
-#        self.name = name
-#        # list of use cases (i.e. when the state is changed)
-#        self.useCases = []
-#        # list of conditions that use this system state
-#        self.dependentConditions = set()
-#
-#    def addUseCase(self, expression, conditions, branchNumber):
-#        isNew = len(self.useCases) == 0
-#        self.useCases.append(
-#            SetUseCase(self, expression, conditions, branchNumber, isNew))
-#
-#    def generateVariables(self, outputFile):
-#        self.useCases[0].generateVariables(outputFile)
-#
-#    def getVariableName(self):
-#        return "sealState_" + self.name
+class SystemState(object):
+    def __init__(self, name):
+        self.name = name
+        # list of use cases (i.e. when the state is changed)
+        self.useCases = []
+        # list of conditions that use this system state
+        self.dependentConditions = set()
+
+    def addUseCase(self, expression, conditions, branchNumber):
+        isNew = len(self.useCases) == 0
+        self.useCases.append(
+            SetUseCase(self, expression, conditions, branchNumber, isNew))
+
+    def generateVariables(self, outputFile):
+        self.useCases[0].generateVariables(outputFile)
+
+    def getVariableName(self):
+        return "sealState_" + self.name
 
 ######################################################
 #class NetworkComponent(object):
@@ -3222,7 +3225,7 @@ class ComponentRegister(object):
         self.internalComponents = {}
 #        self.networkComponents = {}
         self.systemParams = []
-#        self.systemStates = {}
+        self.systemStates = {}
         self.systemConstants = {}
 #        self.parameterDefines = {}
         self.virtualComponents = {}
@@ -3373,7 +3376,6 @@ class ComponentRegister(object):
 
         numericalValue = None
         for basename in basenames:
-            # print "    process", basename
             # constant value
             if basename[:7] == '__const':
                 numericalValue = getNumberFromString(basename[7:])
@@ -3652,27 +3654,27 @@ class ComponentRegister(object):
             if not s1: continue
             s.alsoSensorIds.add(s1.getSystemwideID())
 
-#    def setState(self, name):
-#        # add the state itself, if not already
-#        if name not in self.systemStates:
-#            self.systemStates[name] = SystemState(name)
-#            name = "sealState_" + name
-#            # also add a kind of sensor, to later allow these state values to be read
-#            if name in self.sensors:
-#                self.userError("State '{0}' name duplicates a real sensors for architecture '{1}'\n".format(
-#                        name, self.architecture))
-#                return
-#            # create a custom specification for this sensor
-#            spec = copy.copy(self.sensors.get("null").specification)
-#            spec.useFunction.value = name
-#            spec.readFunction.value = spec.useFunction.value
-#            # spec.dataType = componentRegister.module.SealParameter(value.getType())
-#            # add the sensor to array
-#            self.sensors[name] = Sensor(name, spec)
+    def setState(self, name):
+        # add the state itself, if not already
+        if name not in self.systemStates:
+            self.systemStates[name] = SystemState(name)
+            mangledName = "sealState_" + name
+            # also add a kind of sensor, to later allow these state values to be read
+            if name in self.sensors:
+                self.userError("State '{0}' name duplicates a real sensors for architecture '{1}'\n".format(
+                        name, self.architecture))
+                return
+            # create a custom specification for this sensor
+            spec = copy.copy(self.sensors.get("null").specification)
+            spec.useFunction.value = mangledName
+            spec.readFunction.value = spec.useFunction.value
+            # spec.dataType = componentRegister.module.SealParameter(value.getType())
+            # add the sensor to array
+            self.sensors[name] = Sensor(name, spec)
 
     def generateVariables(self, outputFile):
-#        for s in self.systemStates.values():
-#            s.generateVariables(outputFile)
+        for s in self.systemStates.values():
+            s.generateVariables(outputFile)
         for p in self.patterns.values():
             p.generateVariables(outputFile, self)
 #        outputFile.write("int8_t doThenBranchStatus[{}];\n".format(self.numDoBranches))
@@ -3692,6 +3694,8 @@ class ComponentRegister(object):
     def markUsedSensors(self):
         for s in self.sensors.values():
             if s.isUsed(): continue
+            # null sensor is "used" as dummies in places where code needs it
+            if s.name == "null": continue
             for d in s.derivedSensors:
                 if d.isUsed():
                     s.markAsUsed()
@@ -3734,15 +3738,15 @@ class ComponentRegister(object):
 #        if n:
 #            return n.replaceCode(parameterName, condition)
 
-#        s = self.systemStates.get(componentName, None)
-#        if s != None:
-#            if parameterName.lower() != 'value':
-#                self.userError("System state '{}' has only 'value' parameter, not '{}'!\n".format(componentName, parameterName))
-#                return "false"
-#            if condition:
-#                condition.dependentOnStates.add(s)
-#                s.dependentConditions.add(condition)
-#            return "sealState_" + componentName
+        s = self.systemStates.get(componentName, None)
+        if s != None:
+            if parameterName.lower() != 'value':
+                self.userError("System state '{}' has only 'value' parameter, not '{}'!\n".format(componentName, parameterName))
+                return "false"
+            if condition:
+                condition.dependentOnStates.add(s)
+                s.dependentConditions.add(condition)
+            return "sealState_" + componentName
 
         c = self.findComponentByName(componentName)
         if c == None:
@@ -3786,6 +3790,10 @@ class ComponentRegister(object):
 
             # new code:
             if not c.isUsed():
+                if isinstance(c, Actuator) and inParameter:
+                     # allow - the return value will never be used
+                    return ""
+
                 typename = "Sensor" if isinstance(c, Sensor) else "Actuator"
                 self.userError("{0} '{1}' used in an expression, but never read!\n".format(typename, componentName))
                 return "false"

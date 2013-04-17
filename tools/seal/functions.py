@@ -302,7 +302,7 @@ def resolveAlias(funName):
     if funName == "blur": return "smoothen"
     return funName
 
-def validateFunction(functionTree):
+def validateFunction(functionTree, componentRegister):
     funName = functionTree.function
 
     fun = functions.get(resolveAlias(funName))
@@ -351,7 +351,7 @@ def validateFunction(functionTree):
         # OK, argument expected and found. check its value.
         if f.constantOnly:
             for v in g:
-                if not v.isConstant():
+                if not v.isConstant(componentRegister):
                     return (False, "{} argument ('{}') of function {} is expected to be a constant!\n".format(
                         toTitleCase(orderNumToString(i)), f.name, fun.declaration()))
 
