@@ -772,6 +772,8 @@ class NetworkOutput(SealOutput):
     socketSend(&socket, &networkPacket, sizeof(networkPacket))"""
         self.protocol = SealParameter("NULL", ["NULL", "CSMA", "CSMA_ACK", "SAD"])
         self.routing = SealParameter("DV", ["DV", "SAD"])
+        self.hopcount = SealParameter(None, ["0xffff", "1", "2", "3", "4", "5", "10", "20"])
+        self.destination = SealParameter(None)
         self.extraIncludes.value = "#include <net/mac.h>"
         self.extraConfig.value = "USE_NET=y"
 
