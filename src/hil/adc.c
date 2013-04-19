@@ -24,6 +24,8 @@
 
 #include <adc.h>
 #include <digital.h>
+#include <print.h>
+#include <delay.h>
 
 #define enableAdcPin(port, pin) \
     pinAsFunction(port, pin);   \
@@ -33,7 +35,6 @@
 void adcInit(void)
 {
     hplAdcInit();
-    hplAdcOff();
 
     // XXX: needed for lynx board to work without specific initialization
 #if 0
@@ -75,7 +76,7 @@ uint16_t adcRead(uint8_t ch)
         if (wasOn) hplAdcOn();
     }
 
-    // turn it on
+     // turn it on
     if (!wasOn) {
         hplAdcOn();
     }
@@ -88,9 +89,9 @@ uint16_t adcRead(uint8_t ch)
     retval = hplAdcGetVal();
 
     // reset back to original state
-//    if (!wasOn) {
-//        hplAdcOff();
-//    }
+    if (!wasOn) {
+        hplAdcOff();
+    }
 
     return retval;
 }

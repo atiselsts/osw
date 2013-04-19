@@ -30,6 +30,7 @@
 #include "sleep_internal.h"
 #include <print.h>
 #include <leds.h>
+#include <radio.h>
 
 #ifndef CUSTOM_TIMER_INTERRUPT_HANDLERS
 
@@ -93,6 +94,12 @@ void doMsleep(uint16_t milliseconds)
         // change energy accounting mode
         energyConsumerOff(ENERGY_CONSUMER_MCU);
         energyConsumerOn(ENERGY_CONSUMER_LPM);
+
+#if USE_SOFT_SERIAL
+        serialDisableTX(0);
+        serialDisableTX(1);
+        SLEEP_TIMER_INIT();
+#endif
         // setup sleep timer
         sleepTimerSet(milliseconds);
         // start timer B
@@ -121,6 +128,13 @@ void doMsleep(uint16_t milliseconds)
 
         // sleep timer should not automatically restart
         SLEEP_TIMER_STOP();
+
+#if USE_SOFT_SERIAL
+        // in case printing and radio is using serial port
+        printInit();
+        radioReinit();
+//        amb8420Reset();
+#endif
     } else {
         // Zero sleep time requested. Allow, because this way
         // scheduler code becomes simpler, but don't even try going to sleep.

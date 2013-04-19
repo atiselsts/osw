@@ -65,6 +65,8 @@ PSOURCES-$(USE_RADIO) += $(SRC)/chips/cc2420/cc2420.c
 PSOURCES-$(USE_SERIAL_NUMBER) += $(SRC)/chips/ds2411/ds2411.c
 PSOURCES-$(USE_EXT_FLASH) += $(SRC)/chips/m25p80/m25p80.c
 
+ifneq ($(USE_SOFT_SERIAL),y)
 PSOURCES-$(USE_SERIAL) += $(SRC)/chips/msp430/msp430_usci_uart.c
+endif
 PSOURCES-$(USE_SPI) += $(SRC)/chips/msp430/msp430_usci_spi.c
 PSOURCES-$(USE_I2C) += $(SRC)/chips/msp430/msp430_usci_i2c.c

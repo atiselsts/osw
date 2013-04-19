@@ -32,6 +32,7 @@
 
 #define ALARM_TIMER_START()
 #define ALARM_TIMER_EXPIRED() (1)
+#define ALARM_TIMER_READ() 0
 #define ALARM_TIMER_READ_STOPPED() 0
 #define SET_NEXT_ALARM_TIMER(value)
 #define NEXT_ALARM_TIMER() 0
@@ -42,6 +43,8 @@
 #define SET_NEXT_CORRECTION_TIMER(value)
 
 
+#define SLEEP_TIMER_INIT()
+#define SLEEP_TIMER_START()
 #define SLEEP_TIMER_STOP()
 #define SLEEP_TIMER_EXPIRED() (1)
 #define SLEEP_TIMER_READ() 0

@@ -28,14 +28,14 @@ from output_area import OutputArea
 from helperFunctions import listenSerialPort
 from myThread import MyThread
 from motelist import Motelist
+from Translater import localize
 
 class ListenModule(wx.Panel):
     def __init__(self, parent, API):
         super(ListenModule, self).__init__(parent)
 
         self.API = API
-        # Just a shorter name
-        self.tr = self.API.translater.translate
+
         self.haveMote = False
         self.listening = False
         self.args = {
@@ -50,8 +50,10 @@ class ListenModule(wx.Panel):
         self.listenControls = wx.BoxSizer(wx.HORIZONTAL)
 
         self.ports = wx.ComboBox(self, choices = [], size = (300, -1))
-        self.clear = wx.Button(self, label = self.tr("Start listening"))
-        self.refresh = wx.Button(self, label = self.tr("Refresh"))
+        self.clear = wx.Button(self, label = localize("Start listening"))
+        self.refresh = wx.Button(self, label = localize("Refresh"))
+        self.clearOutput = wx.Button(self, label = localize("Clear"))
+        self.saveOutput = wx.Button(self, label = localize("Save to file"))
 
         self.ports.SetEditable(False)
 
@@ -61,15 +63,19 @@ class ListenModule(wx.Panel):
         self.clearOutputArea = self.outputArea.clear
 
         self.listenControls.Add(self.ports)
-        self.listenControls.Add(self.refresh)
+        self.listenControls.Add(self.refresh)     
         self.listenControls.Add(self.clear)
+        self.listenControls.Add(self.clearOutput)
+        self.listenControls.Add(self.saveOutput)
 
         self.main.Add(self.listenControls, 0,
                       wx.EXPAND | wx.wx.TOP | wx.LEFT | wx.RIGHT, 10);
         self.main.Add(self.outputArea, 1, wx.EXPAND | wx.ALL, 5);
 
-        self.Bind(wx.EVT_BUTTON, self.doClear, self.clear)
+        self.Bind(wx.EVT_BUTTON, self.doClear, self.clear)         
         self.Bind(wx.EVT_BUTTON, self.updateMotelist, self.refresh)
+        self.Bind(wx.EVT_BUTTON, self.clearOutputArea, self.clearOutput)
+        self.Bind(wx.EVT_BUTTON, self.saveOutputArea, self.saveOutput)
         self.Bind(wx.EVT_COMBOBOX, self.changeTarget, self.ports)
         self.Bind(wx.EVT_TEXT, self.changeTarget, self.ports)
 
@@ -87,7 +93,7 @@ class ListenModule(wx.Panel):
         if type(event) is str:
             if self.listening:
                 self.listening = False
-                self.clear.SetLabel(self.tr('Start listening'))
+                self.clear.SetLabel(localize('Start listening'))
                 self.updateStatus("\nListening stopped.\n", False)
             return
 
@@ -97,10 +103,10 @@ class ListenModule(wx.Panel):
         self.listening = not self.listening
 
         if self.listening:
-            self.clear.SetLabel(self.tr('Stop listening'))
+            self.clear.SetLabel(localize('Stop listening'))
             self.updateStatus("\nListening started.\n", False)
         else:
-            self.clear.SetLabel(self.tr('Start listening'))
+            self.clear.SetLabel(localize('Start listening'))
             self.updateStatus("\nListening stopped.\n", False)
 
         # Redraw button if size have changed
@@ -137,9 +143,9 @@ class ListenModule(wx.Panel):
 
         if self.ports.GetValue() == "":
             if self.haveMote:
-                self.ports.SetValue(self.tr("Use default device"))
+                self.ports.SetValue(localize("Use default device"))
             else:
-                self.ports.SetValue(self.tr("No devices found"))
+                self.ports.SetValue(localize("No devices found"))
 
     def changeTarget(self, event):
         # Stop listening
@@ -150,3 +156,14 @@ class ListenModule(wx.Panel):
 
         if val.count("(") != 0:
             self.args['serialPort'] = val.split("(")[1].split(")")[0]
+
+    def saveOutputArea(self, event):
+        save = wx.FileDialog(self,
+            localize("Save node output") + " \"",
+            wildcard = localize('All files') + '|*',
+            style = wx.FD_SAVE | wx.FD_OVERWRITE_PROMPT,
+            defaultFile = self.args["serialPort"])
+        if save.ShowModal() == wx.ID_OK:
+            with open(save.GetPath(),"w") as out:
+                out.write(self.outputArea.outputArea.GetValue())
+        save.Destroy()

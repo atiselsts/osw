@@ -236,7 +236,7 @@ class SealParser():
         '''declaration : component_use_case
                        | when_block
                        | do_block
-                       | system_config
+                       | system_configuration
                        | pattern_declaration
                        | const_statement
                        | set_statement
@@ -272,10 +272,15 @@ class SealParser():
 #        '''
 #        p[0] = NetworkReadStatement(p[2], p[3])
 
-    def p_system_config(self, p):
-        '''system_config : CONFIG_TOKEN value ';'
+    def p_system_configuration(self, p):
+        '''system_configuration : CONFIG_TOKEN value ';'
         '''
         p[0] = SystemParameter(p[2])
+
+    def p_pattern_declaration(self, p):
+        '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'
+        '''
+        p[0] = PatternDeclaration(p[2], p[4])
 
     def p_const_statement(self, p):
         '''const_statement : CONST_TOKEN IDENTIFIER_TOKEN value ';'
@@ -292,11 +297,6 @@ class SealParser():
         '''set_statement : SET_TOKEN IDENTIFIER_TOKEN functional_expression ';'
         '''
         p[0] = SetStatement(p[2], Expression(right=p[3]))
-
-    def p_pattern_declaration(self, p):
-        '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'
-        '''
-        p[0] = PatternDeclaration(p[2], p[4])
 
     def p_define_statement(self, p):
         '''define_statement : DEFINE_TOKEN IDENTIFIER_TOKEN functional_expression parameter_list ';'
