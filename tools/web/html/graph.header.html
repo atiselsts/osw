@@ -18,14 +18,14 @@
 			async: false
 			}).responseText;
 		var i, j, z;
-		allData = allData.split("|");
+		allData = allData.split("|"); //diffrent measurements
 		for(i = 0; i < allData.length; i++){
 			if(allData[i].length > 0){
-				allData[i] = allData[i].split(":");
-				allData[i][1] = allData[i][1].split(";");
+				allData[i] = allData[i].split(":"); //title from data
+				allData[i][1] = allData[i][1].split(";"); //diferent data
 				for(z = 0; z < allData[i][1].length; z++){
 					if(allData[i][1][z].length > 0){
-						allData[i][1][z] = allData[i][1][z].split(",");
+						allData[i][1][z] = allData[i][1][z].split(","); //data from timestemp
 						allData[i][1][z][0] = Number(allData[i][1][z][0]) - TimezoneOffset;
 						allData[i][1][z][1] = Number(allData[i][1][z][1]);
 					}
@@ -55,7 +55,7 @@
 			//Options in http://api.highcharts.com/
 			$('#container').highcharts({
 				title: {
-					text: 'Measurements from all motes.'
+					text: 'Measurements from all motes'
 				},
 				/*subtitle: {
 					text: 'Subtitle'
@@ -99,11 +99,11 @@
 				lastData[i][0] = dataList[i]["data"][dataList[i]["data"].length - 1][0];
 				lastData[i][1] = dataList[i]["data"].length
 			}
-			setTimeout(StartGraph,900);
+			setTimeout(StartGraph,1000);
 		}
 		else{
 			time += 2000;
-			if (time > 10000) time = 10000;
+			if (time > 20000) time = 20000;
 			setTimeout(function (){drawChart(time)},time);
 		}
     }
@@ -127,7 +127,7 @@
 				if (lastData[i] != undefined){
 					if (lastData[i][0] != dataList[i]["data"][dataList[i]["data"].length - 1][0]){
 						j = dataList[i]["data"].length - 1;
-						for(; j > 0 && lastData[i][0] != dataList[i]["data"][j][0]; j--);
+						for(; j > -1 && lastData[i][0] != dataList[i]["data"][j][0]; j--);
 						add = dataList[i]["data"].length - j
 						lastData[i][1] += add - 1;
 						add = lastData[i][1] - maxDisplay;

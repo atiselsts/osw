@@ -42,8 +42,7 @@ class Settings(object):
 
     cfg = ConfigValues()
 
-    configurationFileName = "server.cfg"
-    userconfigurationFileName = "user.cfg"
+    FileNames = ["server.cfg", "user.cfg"]
     _inFile = {}
     def listInList(self, alist):
         i = len(alist) - 1
@@ -72,7 +71,7 @@ class Settings(object):
         self.comments = {}
         tmpComment = ""
         
-        for files in [self.configurationFileName, self.userconfigurationFileName]:
+        for files in self.FileNames:
             with open(files, 'r') as f:
                 line = 0
                 self._inFile[files] = []
@@ -113,8 +112,16 @@ class Settings(object):
                 if tmpComment:
                     self.comments["__EOF"] = tmpComment
 
-    def save(self):
-        for files in self._inFile.keys():
+    def save(self, setting = "all"):#save all file with given setting, "all" - saving all files
+        if setting == "all":
+            tfiles = self._inFile.keys()
+        else:
+            tfiles = []
+            for files in self._inFile.keys():
+                for key in self._inFile[files]:
+                    if setting == key:
+                        tfiles.append(files)
+        for files in tfiles:
             with open(files, 'w') as f:
                 for key in self._inFile[files]:
                     value = self.cfg.__dict__[key]
