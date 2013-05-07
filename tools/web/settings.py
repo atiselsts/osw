@@ -39,18 +39,29 @@ class Settings(object):
             self.adminValues = ["admin","21232f297a57a5a743894a0e4a801fc3","9"] #password "admin"
             self.userWebAttributes = [] #user editable (password is built-in)
             self.adminWebAttributes = ["level"] #admin editable (reset password is built-in and name is uneditable)
+            #graph.cfg
+            self.graphTitle = "Measurements_from_all_motes"
+            self.graphYAxis = "Measurements"
+            self.graphInterval = "1000"
+            self.graphData = [["all"]]
+            self.graphMaxDisplay = "40"
+            
 
     cfg = ConfigValues()
 
-    FileNames = ["server.cfg", "user.cfg"]
+    FileNames = ["server.cfg", "user.cfg","graph.cfg"]
     _inFile = {}
     def listInList(self, alist):
         i = len(alist) - 1
-        blist = []
-        while i > 0:
+        blist = [] #blist is end result
+        while i >= 0:
             if alist[i][-1:] == "]":
+                if alist[i][:1] == "[":
+                    blist.insert(0, [alist[i][1:-1]])
+                    i -= 1
+                    continue
                 j = i - 1
-                clist = [alist[i][:-1]]
+                clist = [alist[i][:-1]] #clist is list in list
                 while j > -1:
                     if alist[j][:1] == "[":
                         clist.insert(0, alist[j][1:])
@@ -101,7 +112,7 @@ class Settings(object):
                     # extract value list
                     vv = kv[1].strip('"').split(",")
 
-                    if len(vv) == 1:
+                    if len(vv) == 1 and (len(vv[0]) < 2 or (vv[0][:1] != "[" and vv[0][-1:] != "]")):
                         # single value
                         self.cfg.__setattr__(key, vv[0])
                     else:

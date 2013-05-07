@@ -6,155 +6,233 @@
 
 	var nd = new Date();
 	var TimezoneOffset = nd.getTimezoneOffset() * 60000;
-	var lastData = new Array();
-	var maxDisplay = 40;
-	var interval, play = false;
+	var interval = new Array();
+	var dataSourse = "graph-data";
+	var allGraph = new Array();
+	var allData;
+	var dataReadInterval = 1000;
+	//dataSourse = "data.js"; // for testing
 	
-	function getValues() {
-	var allData = $.ajax({
-			url: "graph-data",
-			//url: "data.js", //for testing
-			dataType:"json",
+
+	function getData(type) {
+	if (type == 1) source = dataSourse;
+	else source = "graph-form"
+	var newData = $.ajax({
+			url: source, 
 			async: false
 			}).responseText;
-		var i, j, z;
-		allData = allData.split("|"); //diffrent measurements
-		for(i = 0; i < allData.length; i++){
-			if(allData[i].length > 0){
-				allData[i] = allData[i].split(":"); //title from data
-				allData[i][1] = allData[i][1].split(";"); //diferent data
-				for(z = 0; z < allData[i][1].length; z++){
-					if(allData[i][1][z].length > 0){
-						allData[i][1][z] = allData[i][1][z].split(","); //data from timestemp
-						allData[i][1][z][0] = Number(allData[i][1][z][0]) - TimezoneOffset;
-						allData[i][1][z][1] = Number(allData[i][1][z][1]);
+		if (newData == undefined){
+			if(type == 1) allData = "";
+			return "";
+		}
+		newData = newData.split("|"); //diffrent measurements/graph
+		for(var i = 0; i < newData.length; i++){
+			if(newData[i].length > 0){
+				newData[i] = newData[i].split(":"); //title from data
+				newData[i][1] = newData[i][1].split(";"); //diferent data/settings
+				if(type == 1){
+					for(var z = 0; z < newData[i][1].length; z++){
+						if(newData[i][1][z].length > 0){
+							newData[i][1][z] = newData[i][1][z].split(","); //data from timestemp
+							newData[i][1][z][0] = Number(newData[i][1][z][0]) - TimezoneOffset;
+							newData[i][1][z][1] = Number(newData[i][1][z][1]);
+						}
+						else{
+							newData[i][1].splice(z,1);
+							z--;
+						}
 					}
-					else{
-						allData[i][1].splice(z,1);
-						z--;
-					}
-				}				
+				}
 			}
 			else{
-				allData.splice(i,1);
+				newData.splice(i,1);
 				i--;
 			}
 		}
-		var dataList = new Array();
-		for(i = 0; i < allData.length; i++){
-			dataList[i] = {};
-			dataList[i]["name"] = allData[i][0];
-			dataList[i]["data"] = allData[i][1];
-		}
-		return dataList
-	}
-	function drawChart(time) {
-		var dataList;
-		dataList = getValues();
-		if(dataList.length > 0){
-			//Options in http://api.highcharts.com/
-			$('#container').highcharts({
-				title: {
-					text: 'Measurements from all motes'
-				},
-				/*subtitle: {
-					text: 'Subtitle'
-				},*/	
-				xAxis: {
-					type: 'datetime',
-					dateTimeLabelFormats: {
-						month: '%e. %b',
-						year: '%b'
-					}
-				},
-				yAxis: {
-					title: {
-						text: "measurements"
-					}
-				},
-				plotOptions: {
-					series: {
-						animation: {
-							duration: 2000
-						}
-					}
-				},
-				chart:{
-					type: 'spline',
-					animation: {
-						duration: 900,   // As close to interval as possible.
-						easing: 'linear'  // Important: this makes it smooth
-					}
-				},
-				tooltip: {
-					formatter: function() {
-							return '<b>'+ this.series.name +'</b><br/>'+
-							Highcharts.dateFormat('%e. %b', this.x) +': '+ this.y;
-					}
-				},
-				series: dataList
-			});
-			for(i = 0; i < dataList.length; i++){
-				lastData[i] = new Array();
-				lastData[i][0] = dataList[i]["data"][dataList[i]["data"].length - 1][0];
-				lastData[i][1] = dataList[i]["data"].length
-			}
-			setTimeout(StartGraph,1000);
+		if(type == 1){
+			allData = newData;
 		}
 		else{
-			time += 2000;
-			if (time > 20000) time = 20000;
-			setTimeout(function (){drawChart(time)},time);
+			return newData;
 		}
+	}
+	function drawChart(graphID, anime) {
+		dataList = getValues(allGraph[graphID]["data"]);
+		//Options in http://api.highcharts.com/
+		$('#graph' + graphID).highcharts({
+			title: {
+				text: allGraph[graphID]["title"]//'Measurements from all motes'
+			},
+			xAxis: {
+				type: 'datetime',
+				dateTimeLabelFormats: {
+					month: '%e. %b',
+					year: '%b'
+				}
+			},
+			yAxis: {
+				title: {
+					text: allGraph[graphID]["yAxis"]
+				}
+			},
+			plotOptions: {
+				series: {
+					animation: {
+						duration: anime ? 2000 : 0
+					}
+				}
+			},
+			chart:{
+				type: 'spline',
+				animation: {
+					duration: allGraph[graphID]["interval"]*0.5,   // As close to interval as possible.
+					easing: 'linear'  // Important: this makes it smooth
+				}
+			},
+			tooltip: {
+				formatter: function() {
+						return '<b>'+ this.series.name +'</b><br/>'+
+						Highcharts.dateFormat('%e. %b', this.x) +': '+ this.y;
+				}
+			},
+			series: dataList
+		});
+		for(var j = 0; j < dataList.length; j++){
+			allGraph[graphID]["lastData"][j] = new Array();
+			allGraph[graphID]["lastData"][j][0] = dataList[j]["data"][dataList[j]["data"].length - 1][0];
+			allGraph[graphID]["lastData"][j][1] = dataList[j]["data"].length
+		}
+	}
+	function setChart() {
+		var dataList;
+		for(var i = 0; i < allGraph.length; i++){
+				var container = document.getElementById('container');
+				var graphdiv = document.createElement('div');
+				var buttondiv = document.createElement('div');
+				graphdiv.setAttribute('id','graph' + i);
+				graphdiv.setAttribute('class','graph');
+				buttondiv.innerHTML = 	"<p>%BUTTONS%</p>"; // BUTTONS use i as id
+				buttondiv.setAttribute('class','graphbutton');
+				container.appendChild(graphdiv);
+				container.appendChild(buttondiv);
+				drawChart(i, true);
+		}
+		setTimeout(function (){FirstStartGraph(allGraph.length)}, 1000);
     }
-	function StartGraph(){
-		interval = setInterval(updateChart, 1000);
-		play = true;
+	function FirstStartGraph(count){
+	for(var i = 0; i < count; i++) StartGraph(i);
 	}
-	function StopGraph(){
-		clearInterval(interval);
-		play = false;
+	function StartGraph(graphID){
+		interval[graphID] = setInterval(function (){updateChart(graphID)}, allGraph[graphID]["interval"]);
+		allGraph[graphID]["play"] = true;
 	}
-	function button(){
-		if (!play) StartGraph();
-		else StopGraph();
+	function StopGraph(graphID){
+		clearInterval(interval[graphID]);
+		allGraph[graphID]["play"] = false;
 	}
-	function updateChart(){
+	function button(graphID, button){
+		if (!allGraph[graphID]["play"]){
+			button.innerHTML = "Pause";
+			updateChart(graphID);
+			StartGraph(graphID);
+		}
+		else{
+			button.innerHTML = "Play";
+			StopGraph(graphID);
+		}
+	}
+	function updateChart(graphID){
 		var dataList, j, add;
-		dataList = getValues();
+		dataList = getValues(allGraph[graphID]["data"]);
 		if(dataList.length > 0){
-			for(i = 0; i < dataList.length; i++){
-				if (lastData[i] != undefined){
-					if (lastData[i][0] != dataList[i]["data"][dataList[i]["data"].length - 1][0]){
+			for(var i = 0; i < dataList.length; i++){
+				if (allGraph[graphID]["lastData"][i] != undefined){
+					if (allGraph[graphID]["lastData"][i][0] != dataList[i]["data"][dataList[i]["data"].length - 1][0]){
 						j = dataList[i]["data"].length - 1;
-						for(; j > -1 && lastData[i][0] != dataList[i]["data"][j][0]; j--);
+						for(; j > -1 && allGraph[graphID]["lastData"][i][0] != dataList[i]["data"][j][0]; j--);
 						add = dataList[i]["data"].length - j
-						lastData[i][1] += add - 1;
-						add = lastData[i][1] - maxDisplay;
-						if(add > 0) lastData[i][1] = maxDisplay;
-						j++; //j stveja uz vienada
+						allGraph[graphID]["lastData"][i][1] += add - 1;
+						add = allGraph[graphID]["lastData"][i][1] - allGraph[graphID]["maxDisplay"];
+						if(add > 0) allGraph[graphID]["lastData"][i][1] = allGraph[graphID]["maxDisplay"];
+						j++; //j was the last shown
+						if(add < 0){drawChart(graphID, false); return;} //;window.location.reload(); //temp solution for add problem
 						for(; j < dataList[i]["data"].length; j++){
-							$('#container').highcharts().series[i].addPoint(
+							$('#graph' + graphID).highcharts().series[i].addPoint(
 								[
-									dataList[i]["data"][j][0],
+									dataList[i]["data"][j][0] + graphID * 1000,
 									dataList[i]["data"][j][1]
 								],
 								false,
-								add > 0
+								true //add > 0
 							);
 							add --;
-							lastData[i][0] = dataList[i]["data"][dataList[i]["data"].length - 1][0];
 						}
+						allGraph[graphID]["lastData"][i][0] = dataList[i]["data"][dataList[i]["data"].length - 1][0];
 					}
 				}
 				else{
-					window.location.reload();
+					drawChart(graphID, false); // Is some extra data - need to redraw all
+					return; 
 				}
 			}
-			$('#container').highcharts().redraw();
+			$('#graph' + graphID).highcharts().redraw();
 		}
 	}
+	function getValues(data){
+		var dataList = new Array();
+		var z = 0;
+		if (data == "all"){
+			for(var i = 0; i < allData.length; i++){
+				dataList[i] = {};
+				dataList[i]["name"] = allData[i][0];
+				dataList[i]["data"] = allData[i][1];
+			}
+			return dataList
+		}
+		else{
+			for(var i = 0; i < allData.length; i++){
+				for(var j = 0; j < data.length; j++){
+					if (allData[i][0] == data[j]){
+						dataList[z] = {};
+						dataList[z]["name"] = allData[i][0];
+						dataList[z]["data"] = allData[i][1];
+						z += 1;
+						break;
+					}	
+				}
+			}
+			return dataList
+		}
+	}
+	function initGraph(){
+		var settings = getData(2),minInterval = 100000;
+		for(var i = 0; i < settings.length; i++){
+			if(settings[i][1][3] == "all"){
+				settings[i][2] = "all";
+				continue;
+			}
+			settings[i][2] = new Array();
+			for(var j = 3; j < settings[0][1].length; j++){
+				settings[i][2][j-3] = settings[i][1][j];
+			}
+		}
+		for(var i = 0; i < settings.length; i++){
+			allGraph[i] = {};
+			allGraph[i]["lastData"] = new Array();
+			allGraph[i]["maxDisplay"] = settings[i][1][2];
+			allGraph[i]["interval"] = settings[i][1][1];
+			if(settings[i][1][1] < minInterval) minInterval = settings[i][1][1];
+			allGraph[i]["play"] = false;
+			allGraph[i]["title"] = settings[i][0];
+			allGraph[i]["data"] = settings[i][2];
+			allGraph[i]["yAxis"] = settings[i][1][0];
+		}
+		
+		getData(1);
+		setInterval(function (){getData(1)}, minInterval); //Update data in smallest interval
+	}
 	$(function (){
-		drawChart(0);
+		initGraph();
+		setChart();
 	})
     </script>

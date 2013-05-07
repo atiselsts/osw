@@ -11,6 +11,7 @@ from PageLogin import *
 from PageServer import *
 from PageAccount import *
 from PageUser import *
+from PageGraph import *
 from settings import *
 from user import *
 from session import *
@@ -108,7 +109,7 @@ def getOswVersion():
     return result
 
 # --------------------------------------------
-class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin, PageServer, setAndServeSessionAndHeader):
+class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin, PageServer, PageGraph, setAndServeSessionAndHeader):
     server_version = 'OSW/' + getOswVersion() + ' Web Server'
     protocol_version = 'HTTP/1.1' # 'HTTP/1.0' is the default, but we want chunked encoding
     def writeChunk(self, buffer):
@@ -468,29 +469,6 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         self.writeChunk(text)
         self.serveFooter()
 
-    def serveGraphs(self, qs):
-        self.setSession(qs)
-        self.send_response(200)
-        self.sendDefaultHeaders()
-        self.end_headers()
-        self.serveHeader("graph", qs)
-        self.serveMotes("graph", "Listen", qs, False)
-
-        if "action" in qs and self.getLevel() > 1:
-            if qs["action"][0] == "Start":
-                if not motes.anySelected():
-                    self.serveError("No motes selected!", False)
-                elif isListening:
-                    self.serveError("Already listening!", False)
-                else:
-                    openAllSerial()
-            else:
-                closeAllSerial()
-
-        action = "Stop" if isListening else "Start"
-        self.serveBody("graph", qs, {"MOTE_ACTION": action})
-        self.serveFooter()
-
     def serveListen(self, qs):
         self.setSession(qs)
         self.send_response(200)
@@ -622,34 +600,6 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
             self.writeChunk("writeAccess=True")
         self.writeFinalChunk()
 
-    def serveGraphsData(self, qs):
-        global lastData
-
-        self.send_response(200)
-        self.sendDefaultHeaders()
-        self.end_headers()
-
-        # if not listening at the moment,
-        # but were listening previosly, send the previous data
-        if not isListening and lastData :
-            self.writeChunk(lastData)
-            self.writeFinalChunk()
-            return
-
-        # get the data to display in graphs
-        allData = ""
-        if moteData.hasData():
-            data = moteData.getData()
-            for mote in data:
-                for sensor in mote.keys():
-                    allData += sensor + ":"
-                    for measur in mote[sensor]:
-                        allData += str(measur[0]) + "," + str(measur[1]) + ";"
-                    allData += "|"
-        lastData = allData
-        self.writeChunk(allData)
-        self.writeFinalChunk()
-
     def serveListenData(self, qs):
         self.send_response(200)
         self.sendDefaultHeaders()
@@ -668,6 +618,7 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
         self.settings = settingsInstance
         self.tabuList = tabuList
         self.htmlDirectory = htmlDirectory
+        self.moteData = moteData
         #global end
         
         self.headerIsServed = False
@@ -685,6 +636,8 @@ class HttpServerHandler(BaseHTTPRequestHandler, PageUser, PageAccount, PageLogin
             self.serveGraphs(qs)
         elif o.path == "/graph-data":
             self.serveGraphsData(qs)
+        elif o.path == "/graph-form":
+            self.serveGraphsForm(qs)
         elif o.path == "/upload":
             self.serveUpload(qs)
         elif o.path == "/login":

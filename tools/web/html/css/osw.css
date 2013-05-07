@@ -137,10 +137,16 @@ h4.war{
     margin-left:2%;
     border-radius:10px;
 }
-#container{
+.graph{
     width:98%;
 	margin:auto;
+	margin-top:30px;
+	margin-bottom:1px;
     border:thin;
+}
+.graphbutton, .graphbutton p{
+	margin:0;
+	margin-left:1%;
 }
 #listen_div {
     min-width:400px;
