@@ -91,7 +91,7 @@ bool defaultBuildHeader(MacInfo_t *mi, uint8_t **header /* out */,
 #if SUPPORT_LONG_ADDR
     if (mi->originalSrc.type == OSW_ADDR_TYPE_SHORT) {
         *fcf1 += FCF_SRC_ADDR_SHORT;
-        le16Write(p, htons(mi->originalSrc.shortAddr));
+        be16Write(p, mi->originalSrc.shortAddr);
         p += OSW_SHORT_ADDR_SIZE;
     } else {
         *fcf1 += FCF_SRC_ADDR_LONG;
@@ -100,7 +100,7 @@ bool defaultBuildHeader(MacInfo_t *mi, uint8_t **header /* out */,
     }
     if (mi->originalDst.type == OSW_ADDR_TYPE_SHORT) {
         *fcf1 += FCF_DST_ADDR_SHORT;
-        le16Write(p, htons(mi->originalDst.shortAddr));
+        be16Write(p, mi->originalDst.shortAddr);
         p += OSW_SHORT_ADDR_SIZE;
     } else {
         if (mi->originalSrc.type != OSW_ADDR_TYPE_SHORT) return false;
@@ -113,21 +113,21 @@ bool defaultBuildHeader(MacInfo_t *mi, uint8_t **header /* out */,
 #else
     // src
     *fcf1 += FCF_SRC_ADDR_SHORT;
-    le16Write(p, htons(mi->originalSrc.shortAddr));
+    be16Write(p, mi->originalSrc.shortAddr);
     p += OSW_SHORT_ADDR_SIZE;
     // dst
     *fcf1 += FCF_DST_ADDR_SHORT;
-    le16Write(p, htons(mi->originalDst.shortAddr));
+    be16Write(p, mi->originalDst.shortAddr);
     p += OSW_SHORT_ADDR_SIZE;
 #endif // !SUPPORT_LONG_ADDR
     if (mi->immedSrc.shortAddr) {
         *fcf1 |= FCF_IMMED_SRC;
-        le16Write(p, htons(mi->immedSrc.shortAddr));
+        be16Write(p, mi->immedSrc.shortAddr);
         p += OSW_SHORT_ADDR_SIZE;
     }
     if (mi->immedDst.shortAddr) {
         *fcf1 |= FCF_IMMED_DST;
-        le16Write(p, htons(mi->immedDst.shortAddr));
+        be16Write(p, mi->immedDst.shortAddr);
         p += OSW_SHORT_ADDR_SIZE;
     }
     if (mi->seqnum) {

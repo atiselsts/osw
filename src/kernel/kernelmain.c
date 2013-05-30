@@ -62,7 +62,7 @@
 #include <fatfs/fatfs.h>
 #endif
 
-#if (defined DEBUG && !defined DPRINT_TO_RADIO)
+#if (defined DEBUG) && !DPRINT_TO_RADIO
 #define INIT_PRINTF(...) PRINTF(__VA_ARGS__)
 #else
 #define INIT_PRINTF(...) // nothing
@@ -164,6 +164,10 @@ static inline void initSystem(void)
 #if USE_ADS8638
     INIT_PRINTF("init ADS8638 ADC converter chip...\n");
     ads8638Init();
+#endif
+#if USE_ADS8328
+    INIT_PRINTF("init ADS8328 ADC converter chip...\n");
+    ads8328Init();
 #endif
 #if USE_AD5258
     INIT_PRINTF("init AD5258 digital potentiometer...\n");

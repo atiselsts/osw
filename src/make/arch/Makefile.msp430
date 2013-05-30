@@ -45,7 +45,7 @@ BSL ?= python tos-bsl
 MSP430-BSL ?= python tos-bsl
 else
 BSL ?= python $(SRC)/make/scripts/tos-bsl
-MSP430-BSL ?= python $(SRCROOT)/mos/make/scripts/bsl.py
+MSP430-BSL ?= python $(SRC)/make/scripts/bsl.py
 endif
 
 # this option is needed for testbed device
@@ -119,7 +119,9 @@ stackdump:
 
 stackdump-build:
 ifeq (1,$(NEW_GCC))
+ifeq (y,$(USE_THREADS))
 	$(_QUIET) $(STACKDUMP) $(OUTDIR)/$(APPMOD).elf msp430 $(VERBOSE)
+endif
 endif
 
 mspsim: build

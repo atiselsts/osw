@@ -47,7 +47,7 @@ enum {
 
 void ads8328Init(void);
 
-void ads8328SelectChannel(uint8_t channel, uint8_t range);
+void ads8328SelectChannel(uint8_t channel);
 
 bool ads8328Read(uint16_t *value);
 

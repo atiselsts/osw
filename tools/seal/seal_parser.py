@@ -81,7 +81,6 @@ class SealParser():
     reserved = {
       "use": "USE_TOKEN",
       "read": "READ_TOKEN",
-#      "networkread": "NETWORK_READ_TOKEN",
       "output": "OUTPUT_TOKEN",
       "when": "WHEN_TOKEN",
       "else": "ELSE_TOKEN",
@@ -89,10 +88,10 @@ class SealParser():
       "end": "END_TOKEN",
       "do": "DO_TOKEN",
       "then": "THEN_TOKEN",
-#      "parameters": "PARAMETERS_TOKEN",
       "define": "DEFINE_TOKEN",
       "config": "CONFIG_TOKEN",
       "const": "CONST_TOKEN",
+      "set": "SET_TOKEN",
       "pattern": "PATTERN_TOKEN",
       "load": "LOAD_TOKEN",
       "where": "WHERE_TOKEN",
@@ -177,7 +176,7 @@ class SealParser():
         lst = zip(prefixList, suffixList)
 
         if isTimeValue(suffixList[-1]):
-            # convet to milliseconds for simpler later processing
+            # convert to milliseconds for simpler later processing
             lst = convertTimeValue(lst)
             if lst is None:
                 self.errorMsgLexer("Unknown format literal for time value\n".format(suffix))
@@ -237,9 +236,10 @@ class SealParser():
         '''declaration : component_use_case
                        | when_block
                        | do_block
-                       | system_config
+                       | system_configuration
                        | pattern_declaration
-                       | const_statement 
+                       | const_statement
+                       | set_statement
                        | define_statement
                        | load_statement
                        | ';'
@@ -272,10 +272,15 @@ class SealParser():
 #        '''
 #        p[0] = NetworkReadStatement(p[2], p[3])
 
-    def p_system_config(self, p):
-        '''system_config : CONFIG_TOKEN value ';'
+    def p_system_configuration(self, p):
+        '''system_configuration : CONFIG_TOKEN value ';'
         '''
         p[0] = SystemParameter(p[2])
+
+    def p_pattern_declaration(self, p):
+        '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'
+        '''
+        p[0] = PatternDeclaration(p[2], p[4])
 
     def p_const_statement(self, p):
         '''const_statement : CONST_TOKEN IDENTIFIER_TOKEN value ';'
@@ -288,10 +293,10 @@ class SealParser():
         else:
             components.componentRegister.systemConstants[name] = value
 
-    def p_pattern_declaration(self, p):
-        '''pattern_declaration : PATTERN_TOKEN IDENTIFIER_TOKEN '(' value_list ')' ';'
+    def p_set_statement(self, p):
+        '''set_statement : SET_TOKEN IDENTIFIER_TOKEN functional_expression ';'
         '''
-        p[0] = PatternDeclaration(p[2], p[4])
+        p[0] = SetStatement(p[2], Expression(right=p[3]))
 
     def p_define_statement(self, p):
         '''define_statement : DEFINE_TOKEN IDENTIFIER_TOKEN functional_expression parameter_list ';'

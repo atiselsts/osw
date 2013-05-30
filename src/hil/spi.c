@@ -37,7 +37,6 @@
  * @param   busId     SPI bus ID
  * @param   buf     the buffer containing the string
  * @param   len     buffer length in bytes
- * @return  0       on success, error code otherwise
  */
 void spiWrite(uint8_t busId, const void *buf_, uint16_t len) {
      uint8_t *buf = (uint8_t *) buf_;
@@ -50,12 +49,20 @@ void spiWrite(uint8_t busId, const void *buf_, uint16_t len) {
  * @param   busId     SPI bus ID
  * @param   buf      the buffer to store the message
  * @param   len      buffer length in bytes
- * @return  received byte count
  */
 void spiRead(uint8_t busId, void *buf_, uint16_t len) {
     uint8_t *buf = (uint8_t *) buf_;
     uint8_t *end = buf + len;
     while (buf < end) *buf++ = spiReadByte(busId);
+}
+
+void spiExchange(uint8_t busId, void *buf_, uint16_t len) {
+    uint8_t *buf = (uint8_t *) buf_;
+    uint8_t *end = buf + len;
+    while (buf < end) {
+        *buf = spiExchByte(busId, *buf);
+        buf++;
+    }
 }
 
 /*

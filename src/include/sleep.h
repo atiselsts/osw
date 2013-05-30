@@ -32,16 +32,15 @@
 #include <defines.h>
 #include <platform.h>
 
-#ifdef PLATFORM_PC
-// sleep already defined on PC platform
-# include <unistd.h>
-# define msleep(ms) usleep((ms) * 1000)
-#else
-
 ///
 /// Milliseconds sleep
 ///
 void msleep(uint16_t milliseconds);
+
+#ifdef PLATFORM_PC
+// sleep already defined on PC platform
+# include <unistd.h>
+#else
 
 ///
 /// Allow another thread to execute. Equivalent to msleep(0)

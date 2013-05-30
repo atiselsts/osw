@@ -37,7 +37,9 @@
 #include <stdtypes.h>
 #include <errors.h>
 #include <hil/spi_hw.h>
+#if USE_SOFT_SPI
 #include <hil/spi_soft.h>
+#endif
 
 //! The constant used to specify software-SPI bus
 #define SPI_BUS_SW 128
@@ -172,7 +174,6 @@ static inline uint16_t spiReadWord(uint8_t busId) {
 /// @param   busId   SPI bus ID (use SPI_BUS_SW for soft SPI)
 /// @param   buf     the buffer containing the string
 /// @param   len     buffer length in bytes
-/// @return  len     bytes written
 ///
 void spiWrite(uint8_t busId, const void *buf, uint16_t len);
 
@@ -182,9 +183,18 @@ void spiWrite(uint8_t busId, const void *buf, uint16_t len);
 /// @param   busId   SPI bus ID (use SPI_BUS_SW for soft SPI)
 /// @param   buf     the buffer to store the message
 /// @param   len     buffer length in bytes
-/// @return  received byte count
 ///
 void spiRead(uint8_t busId, void *buf, uint16_t len);
+
+
+///
+/// Exchanges a message using SPI protocol
+///
+/// @param   busId   SPI bus ID (use SPI_BUS_SW for soft SPI)
+/// @param   buf     the buffer from to read outgoing data and store incoming
+/// @param   len     buffer length in bytes
+///
+void spiExchange(uint8_t busId, void *buf, uint16_t len);
 
 ///
 /// Reads a message, discards it (without storing anywhere)

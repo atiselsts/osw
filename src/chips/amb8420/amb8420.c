@@ -98,8 +98,8 @@ static void rxPacket(uint8_t checksum)
             commandInProgress = 0;
         }
         return;
-    case (AMB8420_CMD_SET_REQ |  AMB8420_REPLY_FLAG):
-    case (AMB8420_CMD_GET_REQ |  AMB8420_REPLY_FLAG):
+    case (AMB8420_CMD_SET_REQ | AMB8420_REPLY_FLAG):
+    case (AMB8420_CMD_GET_REQ | AMB8420_REPLY_FLAG):
     case (AMB8420_CMD_SET_DESTADDR_REQ | AMB8420_REPLY_FLAG):
     case (AMB8420_CMD_SET_DESTNETID_REQ | AMB8420_REPLY_FLAG):
     case (AMB8420_CMD_SET_CHANNEL_REQ | AMB8420_REPLY_FLAG):
@@ -195,19 +195,24 @@ void amb8420Reset(void)
     RPRINTF("amb8420Reset\n");
 
     AMB8420ModeContext_t ctx;
-    // AMB8420_ENTER_STANDBY_MODE(ctx);
+    // the chip cannot be configured while in sleep mode
     AMB8420_ENTER_ACTIVE_MODE(ctx);
 
     pinClear(AMB8420_RESET_PORT, AMB8420_RESET_PIN);
     mdelay(10); // wait for some time
     pinSet(AMB8420_RESET_PORT, AMB8420_RESET_PIN);
     mdelay(2);
+
     // wait for initialization to complete
     AMB8420_WAIT_FOR_RTS_READY(ok);
+
+    RPRINTF("  init completed\n");
 
     pinSet(AMB8420_RESET_PORT, AMB8420_RESET_PIN);
     amb8420InitSerial();
     mdelay(100);
+
+    RPRINTF("  serial init completed\n");
 
     // Switch to command mode (generate falling front)
     pinClear(AMB8420_CONFIG_PORT, AMB8420_CONFIG_PIN);
@@ -217,7 +222,13 @@ void amb8420Reset(void)
     // Wait for device to become ready
     AMB8420_WAIT_FOR_RTS_READY(ok);
 
-    // go to sleep
+    if (pinRead(AMB8420_RTS_PORT, AMB8420_RTS_PIN) == 0) {
+        RPRINTF("  device ready\n");
+    } else {
+        RPRINTF("  device NOT ready\n");
+    }
+
+    // restore sleep mode
     AMB8420_RESTORE_MODE(ctx);
 
     // long delay, maybe helps for the RTS problem
@@ -415,11 +426,7 @@ static int amb8420Set(uint8_t position, uint8_t len, uint8_t *data)
     // if someone grabs access to serial during this waiting,
     // then it will fail, but that's ok, as the caller will retry.
     INTERRUPT_ENABLED_START(handle);
-#ifndef PLATFORM_ARDUINO
-    BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
-#else
-    mdelay(20);
-#endif
+    AMB8420_BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
     INTERRUPT_ENABLED_END(handle);
 
 
@@ -470,11 +477,7 @@ int amb8420GetAll(void)
     // if someone grabs access to serial during this waiting,
     // then it will fail, but that's ok, as the caller will retry.
     INTERRUPT_ENABLED_START(handle);
-#ifndef PLATFORM_ARDUINO
-    BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
-#else
-    mdelay(20);
-#endif
+    AMB8420_BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
     INTERRUPT_ENABLED_END(handle);
 
 #if RADIO_DEBUG
@@ -520,11 +523,7 @@ void amb8420SetChannel(int channel)
 
     // wait for reply
     INTERRUPT_ENABLED_START(handle);
-#ifndef PLATFORM_ARDUINO
-    BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
-#else
-    mdelay(20);
-#endif
+    AMB8420_BUSYWAIT_UNTIL(!commandInProgress, TIMER_100_MS, ok);
     INTERRUPT_ENABLED_END(handle);
 
     // Wait for device to become ready
@@ -587,11 +586,7 @@ int amb8420GetRSSI(void)
     INTERRUPT_ENABLED_START(handle);
 
     // wait for reply
-#ifndef PLATFORM_ARDUINO // just. not. possible
-    BUSYWAIT_UNTIL_NORET(!commandInProgress, TIMER_SECOND);
-#else
-    mdelay(100);
-#endif
+    AMB8420_BUSYWAIT_UNTIL_NORET(!commandInProgress, TIMER_SECOND);
     result = lastRssi;
 
     // disable interrups, if required

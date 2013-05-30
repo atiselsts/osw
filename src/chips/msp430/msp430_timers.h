@@ -138,10 +138,18 @@ enum {
 // Interrupts are synchronously enabled/disabled for mspsim purposes:
 // otherwise mspsim generates interrupts even when the timer is not counting.
 //
+#if CUSTOM_TIMER_INTERRUPT_HANDLERS
+#define msp430StartTimerA() TACTL |= MC_CONT
+#else
 #define msp430StartTimerA() TACTL |= MC_CONT | TAIE
+#endif
 #define msp430StopTimerA()  TACTL &= ~(MC_3 | TAIE)
 
+#if CUSTOM_TIMER_INTERRUPT_HANDLERS
 #define msp430StartTimerB() TBCTL |= MC_CONT | TBIE
+#else
+#define msp430StartTimerB() TBCTL |= MC_CONT
+#endif
 #define msp430StopTimerB()  TBCTL &= ~(MC_3 | TBIE)
 
 #define msp430InitTimerA() \
@@ -150,7 +158,7 @@ enum {
     /* source: 32768Hz ACLK, DIV = 1, interrupt disabled */ \
     TACTL = TASSEL_ACLK | ID_DIV1;  \
     /* set interrupt intervals */  \
-    TACCR0 = PLATFORM_ALARM_TIMER_PERIOD;  \
+    TACCR0 = PLATFORM_ALARM_TIMER_PERIOD; \
     TACCR1 = PLATFORM_TIME_CORRECTION_PERIOD;  \
     /* enable interrupts */ \
     TACCTL0 = TACCTL1 = CCIE; \
@@ -169,9 +177,16 @@ enum {
     TBCTL = TBSSEL_ACLK | ID_DIV8 | CNTL_0;    \
     /* enable CCR1 interrupt */ \
     TBCCTL1 = CCIE;             \
+    TBCCTL2 = 0;                \
+    TBCCTL0 = 0;                \
+    TBCCR0 = TBCCR1 = TBCCR2 = 0xffff; \
+    TBCCR3 = TBCCR4 = TBCCR5 = TBCCR6 = 0xffff; \
 
 // Stop watchdog timer
 #define msp430WatchdogStop() WDTCTL = WDTPW + WDTHOLD
+
+// Start the watchdog timer
+#define msp430WatchdogStart(mode) WDTCTL = mode
 
 // ---------------------------------------------------
 // Alarm timer

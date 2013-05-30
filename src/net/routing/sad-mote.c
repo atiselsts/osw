@@ -149,7 +149,7 @@ static void roStartListeningTimerCb(void *x)
 static void roStopListeningTimerCb(void *x)
 {
     RPRINTF("%lu: turn radio off\n", getSyncTimeMs());
-//    RADIO_OFF_ENERGSAVE();
+    RADIO_OFF_ENERGSAVE();
     isListening = false;
 }
 

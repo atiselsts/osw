@@ -27,10 +27,10 @@ import os, sys, getopt, shutil
 
 inputFileName = 'test.sl'
 outputFileName = 'main.c'
-#architecture = 'testarch'
+architecture = 'testarch'
 #architecture = 'msp430'
 #architecture = 'pc'
-architecture = 'telosb'
+#architecture = 'telosb'
 targetOS = 'osw'
 pathToOS = '../..'
 verboseMode = False

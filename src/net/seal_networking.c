@@ -172,8 +172,8 @@ static void sealRecv(uint8_t *data, uint16_t length)
 }
 
 bool sealNetPacketRegisterInterest(uint32_t typeMask,
-                                    MultiValueCallbackFunction callback,
-                                    int32_t *buffer)
+                                   MultiValueCallbackFunction callback,
+                                   int32_t *buffer)
 {
     for_all_listeners(
             if (l->callback.mv == NULL) {
@@ -187,7 +187,7 @@ bool sealNetPacketRegisterInterest(uint32_t typeMask,
 }
 
 bool sealNetRegisterInterest(uint16_t code,
-                              SingleValueCallbackFunction callback)
+                             SingleValueCallbackFunction callback)
 {
     for_all_listeners(
             if (l->callback.sv == NULL) {
@@ -201,7 +201,7 @@ bool sealNetRegisterInterest(uint16_t code,
 }
 
 bool sealNetPacketUnregisterInterest(uint32_t typeMask,
-                                      MultiValueCallbackFunction callback)
+                                     MultiValueCallbackFunction callback)
 {
     for_all_listeners(
             if (l->typeMask == typeMask && l->callback.mv == callback) {
@@ -213,7 +213,7 @@ bool sealNetPacketUnregisterInterest(uint32_t typeMask,
 }
 
 bool sealNetUnregisterInterest(uint16_t code,
-                                SingleValueCallbackFunction callback)
+                               SingleValueCallbackFunction callback)
 {
     uint32_t typeMask = 1 << code;
     for_all_listeners(

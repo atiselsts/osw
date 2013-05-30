@@ -94,6 +94,7 @@
 #define PRINTF_SERIAL_ID   0
 #endif
 
+#if !USE_SOFT_SERIAL
 
 // This module enables and disables components automatically
 static inline void serialEnableTX(uint8_t id) {  }
@@ -125,9 +126,6 @@ static inline bool serialUsesSMCLK(void ) {
     return false;
 }
 
-static inline void hw_spiBusOn(uint8_t busId) { }
-static inline void hw_spiBusOff(uint8_t busId) { }
-
 
 //
 // Initialize the serial port
@@ -142,6 +140,11 @@ static inline uint_t serialInit(uint8_t id, uint32_t speed, uint8_t conf) {
 #endif
     return 0;
 }
+
+#endif // !USE_SOFT_SERIAL
+
+static inline void hw_spiBusOn(uint8_t busId) { }
+static inline void hw_spiBusOff(uint8_t busId) { }
 
 static inline int8_t hw_spiBusInit(uint8_t busId, SpiBusMode_t spiBusMode)
 {
@@ -159,5 +162,18 @@ static inline int8_t hw_spiBusInit(uint8_t busId, SpiBusMode_t spiBusMode)
     return 0;
 }
 
+static inline void hw_spiBusDisable(uint8_t busId) {
+    extern void msp430UsciDisableSPI0(void);
+    extern void msp430UsciDisableSPI1(void);
+    extern void msp430UsciDisableSPI2(void);
+    extern void msp430UsciDisableSPI3(void);
+
+    if (busId == 0) msp430UsciDisableSPI0();
+    else if (busId == 1) msp430UsciDisableSPI1();
+#if SERIAL_COUNT > 1
+    else if (busId == 2) msp430UsciDisableSPI2();
+    else msp430UsciDisableSPI3();
+#endif
+}
 
 #endif
