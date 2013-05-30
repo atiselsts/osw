@@ -61,10 +61,9 @@ def suffixTransform(value, suffix, componentRegister):
             D = 0.00164025 - 1.12e-05 * (4 - value)
             if D < 0: return 0
             value1 = (0.0405 + math.sqrt(D)) / 5.6e-06
-            if value1 < 0: value1 = -value1
             value2 = (0.0405 - math.sqrt(D)) / 5.6e-06
-            if value2 < 0: value2 = -value2
-            return int(value1 if value1 < value2 else value2)
+            if value1 < 0: return abs(value2)
+            return value1
         print("Relative humidity per cent not handled correctly on architecture {1} at the moment\n".format(
                 componentRegister.architecture))
         return value
