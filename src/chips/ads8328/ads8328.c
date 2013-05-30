@@ -103,10 +103,10 @@ void ads8328Init(void)
     pinAsInput(ADS8328_EOC_PORT, ADS8328_EOC_PIN);
 
     // select channel 0
-    ads8638SelectChannel(ADS8638_CHANNEL_0);
+    ads8328SelectChannel(ADS8638_CHANNEL_0);
 }
 
-void ads8638SelectChannel(uint8_t channel)
+void ads8328SelectChannel(uint8_t channel)
 {
     adsChannel = channel;
 }

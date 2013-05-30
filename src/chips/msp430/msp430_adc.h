@@ -90,6 +90,8 @@
 // Procedures
 //===========================================================
 
+#ifdef USE_ADC // comment out this code for MCU without built-in ADC module
+
 #define ADC_CHANNEL_COUNT 16
 
 // Initialize ADC
@@ -190,5 +192,7 @@ static inline bool hplAdcIsBusy(void)
 {
     return ADC12CTL1 & ADC12BUSY;
 }
+
+#endif // ADC defined
 
 #endif  // !_MSP430_ADC_H_
