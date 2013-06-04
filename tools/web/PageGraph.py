@@ -40,7 +40,7 @@ class PageGraph():
                                 tsettings.pop(number)
                                 self.settings.setCfgValue(atr, tsettings)
                             changes["INFO"] = "<h4 class='suc'> Deleted graph! </h4>"
-                            #self.settings.save(graphAttributes[0])
+                            self.settings.save(graphAttributes[0])
                         else:
                             changes["INFO"] = "<h4 class='err'> There isn't graph " + tses.to_code(str(number)) + "! </h4>"
                     else:
@@ -60,7 +60,7 @@ class PageGraph():
                                 tsettings.insert(number, tses.from_code(qs[atr][0]))
                             self.settings.setCfgValue(atr, tsettings)
                         changes["INFO"] = "<h4 class='suc'> New graph added!</h4>"
-                        #self.settings.save(graphAttributes[0])
+                        self.settings.save(graphAttributes[0])
                     else:
                         changes["INFO"] = "<h4 class='err'> Wrong data for adding new graph! </h4>"
                 else:
